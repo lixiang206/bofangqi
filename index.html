@@ -397,8 +397,8 @@
                 </div>
             </div>
 
-            <div class="song-title" id="songTitle">正在加载歌单...</div>
-            <div class="song-artist" id="songArtist">请稍候</div>
+            <div class="song-title" id="songTitle">未载入歌曲</div>
+            <div class="song-artist" id="songArtist">请选择歌单</div>
 
             <div class="progress-wrapper">
                 <div class="progress-bar-container" id="progressBarContainer">
@@ -426,7 +426,7 @@
                 <button class="tab-btn" id="tabLocal">本地文件夹 (<span id="localCount">0</span>)</button>
             </div>
             <ul class="track-list" id="trackList">
-                <li style="color: #999; text-align: center; padding-top: 50px;">正在加载网页歌单...</li>
+                <li style="color: #999; text-align: center; padding-top: 50px;">暂无歌曲</li>
             </ul>
         </div>
     </div>
@@ -436,6 +436,16 @@
     </div>
 
     <script>
+        // ===================================================
+        // ⚙️ 网页歌单歌曲管理配置：把你在 music 文件夹下的音乐名字直接填在下面！
+        // ⚠️ 记得带上格式后缀（如 .mp3），名字需要与实际文件严格保持一致
+        // ===================================================
+        const myMusicFolderList = [
+            "夏祭り.mp3",
+            "SpotiMate.io - Romantic Memories - 椎名真昼_CV.石見舞菜香_.mp3",
+            "叹云兮.mp3"
+        ];
+
         const audio = document.getElementById('myAudio');
         const playBtn = document.getElementById('playBtn');
         const prevBtn = document.getElementById('prevBtn');
@@ -464,38 +474,26 @@
         let localSongs = [];        
         let currentIndex = 0;       
 
-        // 核心升级：直接从 music 文件夹内抓取 list.json 的配置文件
-        // 替换掉原本的 async function initOnlinePlaylist() 这一段
-function initOnlinePlaylist() {
-    // 终极兼容：直接在这里写死你的歌名，无视任何浏览器跨域限制！
-    const staticList = [
-        "夏祭り.mp3",
-        "SpotiMate.io - Romantic Memories - 椎名真昼_CV.石見舞菜香_.mp3",
-        "叹云兮.mp3"
-    ];
-    
-    onlineSongs = staticList.map(name => {
-        return {
-            name: name,
-            url: `./music/${encodeURIComponent(name)}`
-        };
-    });
-    
-    onlineCountUI.innerText = onlineSongs.length;
-    renderPlaylist();
-    if (onlineSongs.length > 0) {
-        loadSong(0, false);
-    }
-}
-            } catch (err) {
-                console.error('网页歌单加载失败:', err);
-                trackListUI.innerHTML = `<li style="color: #ff7875; text-align: center; padding-top: 40px;">歌单初始化失败<br><small style="color:#aaa;">请确保含有 music/list.json</small></li>`;
-                songTitle.innerText = "载入失败";
-                songArtist.innerText = "请检查配置文件";
+        // 静态化初始化函数：不再发送网络请求，100% 避免跨域限制
+        function initOnlinePlaylist() {
+            onlineSongs = myMusicFolderList.map(name => {
+                return {
+                    name: name,
+                    url: `./music/${encodeURIComponent(name)}`
+                };
+            });
+            
+            onlineCountUI.innerText = onlineSongs.length;
+            
+            if(currentMode === 'online') {
+                renderPlaylist();
+                if (onlineSongs.length > 0) {
+                    loadSong(0, false);
+                }
             }
         }
 
-        // 背景飘花效果
+        // 背景粒子飘动
         function createDecorations() {
             const container = document.getElementById('decorations');
             const count = 12; 
@@ -514,7 +512,7 @@ function initOnlinePlaylist() {
         }
         createDecorations();
 
-        // 选项卡切换
+        // 切换面板标签
         tabOnline.addEventListener('click', () => {
             if(currentMode === 'online') return;
             currentMode = 'online';
@@ -544,11 +542,11 @@ function initOnlinePlaylist() {
             }
         });
 
-        // 本地文件夹模式保持不变
+        // 导入本地磁盘文件夹功能（保持原样）
         selectFolderBtn.addEventListener('click', async () => {
             try {
                 if (!window.showDirectoryPicker) {
-                    alert('当前浏览器不支持此 API，请使用 PC 端的 Chrome / Edge 浏览器操作本地导入。');
+                    alert('当前移动端浏览器限制了文件读取 API，请使用 PC 端的 Chrome / Edge 浏览器操作本地文件夹导入。');
                     return;
                 }
                 const dirHandle = await window.showDirectoryPicker();
@@ -640,7 +638,7 @@ function initOnlinePlaylist() {
         }
 
         function playAudio() {
-            audio.play().catch(err => console.log("等待用户交互后播放"));
+            audio.play().catch(err => console.log("已准备就绪，点击播放即可启动"));
             playBtn.innerText = '暂停';
             disc.style.animationPlayState = 'running';
             tonearm.classList.add('playing');
