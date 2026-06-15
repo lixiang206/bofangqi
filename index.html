@@ -390,7 +390,7 @@
             name: "小さな恋のうた",
             artist: "椎名真昼 (CV: 石见舞菜香)",
             url: "https://music.163.com/song/media/outer/url?id=1411545625.mp3",
-            lrc: "[00:00.00]小さな恋のうた - 椎名真昼\n[00:03.00]词：上江洌清作 曲：MONGOL800\n[00:15.12]広い宇宙の 数ある一つ (在这宽广宇宙的无数星辰中)\n[00:21.85]青い地球の 広い世界里 (在这蓝色地球的广阔世界里)\n[00:28.50]小さな恋の 思いは届く (微不足道的恋情 悄然传达)"
+            lrc: "[00:00.00]小さな恋のうた - 椎名真昼\n[00:03.00]词：上江洌清作 曲：MONGOL800\n[00:15.12]広い宇宙的 数ある一つ (在这宽广宇宙的无数星辰中)\n[00:21.85]青い地球的 広い世界里 (在这蓝色地球的广阔世界里)\n[00:28.50]小さな恋の 思いは届く (微不足道的恋情 悄然传达)"
         };
 
         window.addEventListener('DOMContentLoaded', () => {
@@ -402,7 +402,7 @@
             });
         });
 
-        // ==================== 【全新 Serverless 后端安全中转搜索引擎】 ====================
+        // ==================== 【全新的超强兼容搜索解析逻辑】 ====================
         searchBtn.addEventListener('click', searchMusic);
 
         async function searchMusic() {
@@ -412,16 +412,24 @@
             listWrapper.innerHTML = `<li style="color:#666; text-align:center; padding-top:60px; font-size:0.8rem;">正在通过专线安全抓取云端音频流...</li>`;
 
             try {
-                // 重点：调用你部署在当前自定义域名下的 /api/search 后端边缘函数
                 const response = await fetch(`/api/search?keywords=${encodeURIComponent(keyword)}`);
                 if (!response.ok) throw new Error('边缘网络异常');
                 
                 const resData = await response.json();
+                
+                // ========== 调试日志：可在 F12 控制台里观察后端究竟传回了什么结构 ==========
+                console.log("=== 椎名真昼音乐盒收到的网络原始数据 ===");
+                console.log(resData);
+
                 let parsedSongs = null;
                 
-                // 自动匹配后台吐回来的网易云结果结构
-                if (resData.result && resData.result.songs) parsedSongs = resData.result.songs;
+                // 【全自动数据解构天网】—— 穷尽一切可能的层级进行疯狂抓取
+                if (resData.songs) parsedSongs = resData.songs;
+                else if (resData.result && resData.result.songs) parsedSongs = resData.result.songs;
                 else if (resData.data && resData.data.songs) parsedSongs = resData.data.songs;
+                else if (resData.data && Array.isArray(resData.data)) parsedSongs = resData.data;
+                else if (resData.list) parsedSongs = resData.list;
+                else if (Array.isArray(resData)) parsedSongs = resData;
 
                 if (!parsedSongs || parsedSongs.length === 0) {
                     listWrapper.innerHTML = `<li style="color:#666; text-align:center; padding-top:60px; font-size:0.8rem;">未找到相关歌曲，换个词试试吧 ♪</li>`;
@@ -430,13 +438,29 @@
 
                 // 结构清洗映射
                 onlineSongs = parsedSongs.map(item => {
-                    const artistNames = item.artists ? item.artists.map(a => a.name).join('/') : (item.ar ? item.ar.map(a=>a.name).join('/') : '未知歌手');
+                    // 多层级歌手字段降级提取
+                    let artistNames = '未知歌手';
+                    if (item.artists && Array.isArray(item.artists)) {
+                        artistNames = item.artists.map(a => a.name).join('/');
+                    } else if (item.ar && Array.isArray(item.ar)) {
+                        artistNames = item.ar.map(a => a.name).join('/');
+                    } else if (item.artist) {
+                        artistNames = typeof item.artist === 'string' ? item.artist : (item.artist.name || '未知歌手');
+                    }
+
+                    // 多层级图片字段降级提取
+                    let picUrl = '';
+                    if (item.album && item.album.picUrl) picUrl = item.album.picUrl;
+                    else if (item.al && item.al.picUrl) picUrl = item.al.picUrl;
+                    else if (item.picUrl) picUrl = item.picUrl;
+                    else if (item.pic) picUrl = item.pic;
+
                     return {
-                        id: item.id,
-                        name: item.name || "未知歌曲",
+                        id: item.id || item.songId,
+                        name: item.name || item.title || "未知歌曲",
                         artist: artistNames,
-                        url: `https://music.163.com/song/media/outer/url?id=${item.id}.mp3`,
-                        pic: (item.album && item.album.picUrl) ? item.album.picUrl.replace(/^http:\/\//i, 'https://') : ''
+                        url: `https://music.163.com/song/media/outer/url?id=${item.id || item.songId}.mp3`,
+                        pic: picUrl ? picUrl.replace(/^http:\/\//i, 'https://') : ''
                     };
                 });
 
@@ -454,9 +478,7 @@
         // ==================== 【全新 Serverless 后端安全中转歌词抓取】 ====================
         async function fetchLrc(id) {
             try {
-                // 如果你在第一步中建了 api/lyric.js，这里会自动直通。没加也无妨，它会平滑降级提示
                 const response = await fetch(`/api/search?keywords=${id}&type=lyric`); 
-                // 为了兼容你第一步只写了 search.js，我们这里直接通过带参数请求 search.js 或者直接在前端容灾
                 const data = await response.json();
                 if (data.lrc && data.lrc.lyric) {
                     parseLyric(data.lrc.lyric);
@@ -464,7 +486,6 @@
                 }
             } catch {}
             
-            // 降级高防护提示
             parseLyric(`[00:00.00] 正在畅听高品质云端加密音频流...\n[00:02.00] 椎名真昼正在陪你一起聆听美妙的乐章 ♪`);
         }
 
@@ -513,7 +534,6 @@
                 }
                 fetchLrc(targetSong.id);
             } else {
-                // 本地随身听沙箱数据流
                 const file = await targetSong.fileHandle.getFile();
                 audio.src = URL.createObjectURL(file);
                 discCover.style.backgroundImage = "url('img/changpian.jpg'), url('https://picsum.photos/200')";
@@ -522,7 +542,6 @@
             playAudio();
         }
 
-        // 完美动态时间轴歌词解析算法
         function parseLyric(lrcText) {
             lyricData = [];
             lyricWrapper.innerHTML = '';
@@ -555,7 +574,6 @@
             });
         }
 
-        // 丝滑滚屏动画驱动
         audio.addEventListener('timeupdate', () => {
             if (lyricData.length === 0) return;
             const currentTime = audio.currentTime;
@@ -595,7 +613,6 @@
         prevBtn.addEventListener('click', () => { const cl = (currentTab === 'online') ? onlineSongs : localSongs; if (cl.length > 0) { let idx = currentIndex - 1; if (idx < 0) idx = cl.length - 1; playSelectedSong(idx); } });
         audio.addEventListener('ended', () => { const cl = (currentTab === 'online') ? onlineSongs : localSongs; if (cl.length > 0) playSelectedSong((currentIndex + 1) % cl.length); else pauseAudio(); });
 
-        // 文件系统读取：安全读取整个本地硬盘乐库
         selectFolderBtn.addEventListener('click', async () => {
             try {
                 const dirHandle = await window.showDirectoryPicker();
