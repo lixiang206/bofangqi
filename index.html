@@ -1,0 +1,710 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>椎名真昼の全网音乐搜索盒 (完美音源版)</title>
+    <style>
+        :root {
+            --mahiru-gold: #F5E6CC;      
+            --mahiru-pink: #FFF0F5;      
+            --mahiru-blue: #E6F2FF;      
+            --text-color: #5A4B41;       
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background: linear-gradient(135deg, var(--mahiru-pink), var(--mahiru-gold), var(--mahiru-blue));
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            color: var(--text-color);
+            overflow: hidden;
+            position: relative;
+        }
+
+        *, *::before, *::after {
+            box-sizing: border-box;
+        }
+
+        .main-wrapper {
+            display: flex;
+            gap: 25px;
+            z-index: 2;
+            align-items: flex-start;
+            max-width: 1050px;
+            width: 95vw;
+        }
+
+        /* ================= 1. 播放器主体 ================= */
+        .player-container {
+            background: rgba(255, 255, 255, 0.78);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            padding: 25px 22px;
+            border-radius: 28px;
+            box-shadow: 0 15px 35px rgba(90, 75, 65, 0.12);
+            text-align: center;
+            width: 320px;
+            border: 2px solid rgba(255, 255, 255, 0.6);
+            flex-shrink: 0;
+        }
+
+        .disc-area {
+            position: relative;
+            width: 160px;
+            height: 160px;
+            margin: 0 auto 15px;
+        }
+
+        .tonearm {
+            position: absolute;
+            top: -10px;
+            right: 10px;
+            width: 35px;
+            height: 65px;
+            background: #8B7E74;
+            transform-origin: top center;
+            transform: rotate(-25deg);
+            transition: transform 0.5s ease;
+            z-index: 10;
+            clip-path: polygon(40% 0%, 60% 0%, 60% 80%, 100% 100%, 0% 100%);
+        }
+
+        .tonearm.playing { transform: rotate(0deg); }
+
+        .disc {
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+            background: repeating-radial-gradient(#222, #111 4px, #222 5px);
+            border: 8px solid #2d2d2d;
+            box-shadow: 0 8px 20px rgba(0,0,0,0.2);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            animation: rotateDisc 15s linear infinite;
+            animation-play-state: paused;
+        }
+
+        .disc-cover {
+            width: 85px;
+            height: 85px;
+            border-radius: 50%;
+            background: url('img/changpian.jpg') no-repeat center;
+            background-size: cover;
+            border: 3px solid #000;
+        }
+
+        @keyframes rotateDisc {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+
+        .song-title {
+            font-size: 1.1rem;
+            font-weight: bold;
+            margin-bottom: 4px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .song-artist { font-size: 0.85rem; opacity: 0.75; margin-bottom: 12px; }
+
+        .controls {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 15px;
+        }
+
+        .controls button {
+            background: var(--text-color);
+            color: #fff;
+            border: none;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .btn-main { padding: 10px 30px; font-size: 0.95rem; border-radius: 50px; font-weight: bold;}
+        .btn-side { padding: 8px 12px; font-size: 0.85rem; border-radius: 50%; }
+        .controls button:hover { transform: scale(1.08); background: #7A695E; }
+
+        /* ================= 2. 增强型：全网智能搜索区域 ================= */
+        .search-zone {
+            background: rgba(255, 255, 255, 0.9);
+            padding: 12px;
+            border-radius: 16px;
+            margin-bottom: 12px;
+            border: 1px solid rgba(90, 75, 65, 0.15);
+        }
+        .search-input-group {
+            display: flex;
+            gap: 6px;
+        }
+        .search-input-group input {
+            flex-grow: 1;
+            padding: 8px 12px;
+            border-radius: 8px;
+            border: 1px solid #D1C7BD;
+            font-size: 0.85rem;
+            outline: none;
+        }
+        .search-input-group input:focus {
+            border-color: #A79284;
+        }
+        .search-input-group button {
+            background: #A79284;
+            color: white;
+            border: none;
+            padding: 8px 14px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 0.85rem;
+            font-weight: bold;
+            transition: background 0.2s;
+        }
+        .search-input-group button:hover {
+            background: #8B7E74;
+        }
+
+        /* 本地文件夹载入按钮 */
+        .btn-folder {
+            background: none;
+            color: var(--text-color);
+            border: 1px solid var(--text-color);
+            width: 100%;
+            padding: 7px;
+            border-radius: 8px;
+            font-size: 0.78rem;
+            cursor: pointer;
+            opacity: 0.7;
+            transition: opacity 0.2s;
+        }
+        .btn-folder:hover { opacity: 1; }
+
+        /* ================= 3. 中间：实时高亮歌词面板 ================= */
+        .lyric-container {
+            background: rgba(255, 255, 255, 0.55);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            padding: 20px;
+            border-radius: 28px;
+            width: 340px;
+            height: 390px;
+            box-shadow: 0 15px 35px rgba(90, 75, 65, 0.05);
+            border: 2px solid rgba(255, 255, 255, 0.4);
+            overflow: hidden;
+            position: relative;
+        }
+
+        .lyric-wrapper {
+            position: absolute;
+            width: calc(100% - 40px);
+            top: 170px; 
+            transition: transform 0.3s ease-out;
+            text-align: center;
+        }
+
+        .lyric-line {
+            padding: 8px 0;
+            font-size: 0.9rem;
+            line-height: 1.5;
+            color: rgba(90, 75, 65, 0.5);
+            transition: all 0.3s ease;
+            min-height: 24px;
+        }
+
+        .lyric-line.active {
+            color: #FF6B81; 
+            font-weight: bold;
+            transform: scale(1.06);
+        }
+
+        /* ================= 4. 右侧：全网搜索结果与本地歌曲列表 ================= */
+        .results-container {
+            background: rgba(255, 255, 255, 0.65);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            padding: 20px;
+            border-radius: 28px;
+            width: 320px;
+            height: 390px;
+            box-shadow: 0 15px 35px rgba(90, 75, 65, 0.08);
+            border: 2px solid rgba(255, 255, 255, 0.5);
+            display: flex;
+            flex-direction: column;
+        }
+
+        .list-header-tabs {
+            display: flex;
+            border-bottom: 2px solid var(--mahiru-gold);
+            margin-bottom: 10px;
+            padding-bottom: 2px;
+        }
+
+        .tab-btn {
+            background: none;
+            border: none;
+            font-size: 0.9rem;
+            font-weight: bold;
+            color: var(--text-color);
+            opacity: 0.5;
+            cursor: pointer;
+            padding: 4px 12px;
+        }
+
+        .tab-btn.active {
+            opacity: 1;
+            border-bottom: 3px solid var(--text-color);
+        }
+
+        .scroll-list-wrapper {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+            overflow-y: auto;
+            flex-grow: 1;
+        }
+
+        .song-item {
+            padding: 10px 12px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 0.82rem;
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+            margin-bottom: 5px;
+            background: rgba(255,255,255,0.3);
+            border: 1px solid rgba(255,255,255,0.5);
+            transition: all 0.2s;
+        }
+
+        .song-item:hover { 
+            background: rgba(245, 230, 204, 0.6); 
+            transform: translateX(3px);
+        }
+        .song-item.active { 
+            background: var(--text-color); 
+            color: #fff; 
+            font-weight: bold; 
+        }
+        .song-item .sub-info {
+            font-size: 0.72rem;
+            opacity: 0.6;
+        }
+        .song-item.active .sub-info {
+            color: #E6F2FF;
+            opacity: 0.8;
+        }
+
+        /* 看板娘小彩蛋 */
+        .mahiru-character {
+            position: absolute;
+            bottom: -20px;
+            right: 20px;
+            width: 160px;
+            height: 260px;
+            z-index: 1;
+            cursor: pointer;
+            transition: all 0.5s ease;
+            background: url('img/lihui.png') no-repeat bottom center;
+            background-size: contain;
+        }
+        .mahiru-character:hover { transform: translateY(-8px); }
+        .dialogue-bubble {
+            position: absolute;
+            bottom: 230px;
+            right: 30px;
+            background: #fff;
+            padding: 8px 14px;
+            border-radius: 14px;
+            font-size: 0.8rem;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.08);
+            opacity: 0;
+            transform: translateY(10px);
+            transition: all 0.4s ease;
+            pointer-events: none;
+            white-space: nowrap;
+        }
+        .dialogue-bubble::after {
+            content: ''; position: absolute; bottom: -8px; right: 30px;
+            border-width: 8px 8px 0; border-style: solid; border-color: #fff transparent;
+        }
+        .mahiru-character:hover .dialogue-bubble { opacity: 1; transform: translateY(0); }
+    </style>
+</head>
+<body>
+
+    <div class="main-wrapper">
+        <!-- 左侧面板：唱片中心、搜索框 -->
+        <div class="player-container">
+            <div class="disc-area">
+                <div class="tonearm" id="tonearm"></div>
+                <div class="disc" id="disc">
+                    <div class="disc-cover" id="discCover"></div>
+                </div>
+            </div>
+
+            <div class="song-title" id="songTitle">小さな恋のうた</div>
+            <div class="song-artist" id="songArtist">椎名真昼 (石见舞菜香)</div>
+
+            <div class="controls">
+                <button class="btn-side" id="prevBtn">⏮</button>
+                <button class="btn-main" id="playBtn">点击播放</button>
+                <button class="btn-side" id="nextBtn">⏭</button>
+            </div>
+
+            <!-- 全网云端歌曲搜索输入框 -->
+            <div class="search-zone">
+                <div class="search-input-group">
+                    <input type="text" id="searchInput" placeholder="输入歌曲名 / 歌手...">
+                    <button id="searchBtn">搜 索</button>
+                </div>
+            </div>
+
+            <!-- 本地备用通道 -->
+            <button class="btn-folder" id="selectFolderBtn">📂 切换并读取本地文件夹</button>
+            <audio id="myAudio" crossorigin="anonymous"></audio>
+        </div>
+
+        <!-- 中间面板：动态高亮歌词 -->
+        <div class="lyric-container">
+            <div class="lyric-wrapper" id="lyricWrapper">
+                <div class="lyric-line" style="padding-top: 100px;">输入歌曲搜索，或直接点击播放吧</div>
+            </div>
+        </div>
+
+        <!-- 右侧面板：搜索到的结果/本地歌单一键切换 -->
+        <div class="results-container">
+            <div class="list-header-tabs">
+                <button class="tab-btn active" id="tabOnline">云端搜索结果</button>
+                <button class="tab-btn" id="tabLocal">本地随身听</button>
+            </div>
+            <ul class="scroll-list-wrapper" id="listWrapper">
+                <li style="color: #999; text-align: center; padding-top: 60px; font-size:0.8rem;">在左侧输入框搜索看看吧 ♪</li>
+            </ul>
+        </div>
+    </div>
+
+    <!-- 真昼小看板娘 -->
+    <div class="mahiru-character" id="mahiruSkin">
+        <div class="dialogue-bubble" id="bubble">今天想和周一起听哪一首歌呢？</div>
+    </div>
+
+    <!-- ======================= 核心 JS 云端搜索/本地兼容引擎 ======================= -->
+    <script>
+        const audio = document.getElementById('myAudio');
+        const playBtn = document.getElementById('playBtn');
+        const prevBtn = document.getElementById('prevBtn');
+        const nextBtn = document.getElementById('nextBtn');
+        const searchInput = document.getElementById('searchInput');
+        const searchBtn = document.getElementById('searchBtn');
+        const selectFolderBtn = document.getElementById('selectFolderBtn');
+        const tabOnline = document.getElementById('tabOnline');
+        const tabLocal = document.getElementById('tabLocal');
+        const listWrapper = document.getElementById('listWrapper');
+        const disc = document.getElementById('disc');
+        const tonearm = document.getElementById('tonearm');
+        const songTitle = document.getElementById('songTitle');
+        const songArtist = document.getElementById('songArtist');
+        const lyricWrapper = document.getElementById('lyricWrapper');
+        const bubble = document.getElementById('bubble');
+
+        let onlineSongs = [];     // 存储在线搜索到的歌曲
+        let localSongs = [];      // 存储本地文件夹导入的歌曲
+        let currentTab = 'online'; // 标志当前处于云端还是本地标签
+        let currentIndex = 0;     // 当前播放索引
+        let lyricData = [];       // 存放当前解码后的歌词
+
+        // 默认内置的真昼经典音源与歌词作为底座支撑，确保初始化安全
+        const defaultMahiruSong = {
+            name: "小さな恋のうた",
+            artist: "椎名真昼 (CV: 石见舞菜香)",
+            url: "https://music.163.com/song/media/outer/url?id=1411545625.mp3",
+            lrc: "[00:00.00]小さな恋のうた - 椎名真昼\n[00:03.00]词：上江洌清作 曲：MONGOL800\n[00:15.12]広い宇宙の 数ある一つ (在这宽广宇宙的无数星辰中)\n[00:21.85]青い地球の 広い世界で (在这蓝色地球的广阔世界里)\n[00:28.50]小さな恋の 思は届く (微不足道的恋情 悄然传达)\n[00:35.10]小さな島の あなたのも特へ (传达到那座小岛上的 你的身边)\n[00:42.10]あなたと出会い 时は流れる (与你相遇 时光流逝)\n[00:48.80]思いを込めた 手纸も増える (饱含深情的心意 写满信笺)\n[00:55.50]いつしか二人 互いに响く (不知不觉间 我们心意相通)\n[01:02.10]时に激しく 时に切なく (时而炽热 饱含悸动)\n[01:08.80]响くは远く 遥か彼方へ (歌声回荡 传向那遥远的彼方)\n[01:15.50]心地よい风 吹くこの空を (在这拂过舒适微风的天空里)\n[01:22.10]届けよう (传达给你吧)\n[01:24.80]ほら あなたにとって大事な人ほど (看吧 对你而言越是重要的人)\n[01:31.50]すぐそばにいるの (越是悄然陪伴在你的身旁)\n[01:35.30]ただ あなたにだけ届いて欲しい (只愿这份歌声 能够传达到你心里)\n[01:42.10]响け恋のうた (回荡吧 恋爱之歌)"
+        };
+
+        // 页面启动装载
+        window.addEventListener('DOMContentLoaded', () => {
+            audio.src = defaultMahiruSong.url;
+            parseLyric(defaultMahiruSong.lrc);
+            
+            // 绑定回车键快捷搜索
+            searchInput.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter') searchMusic();
+            });
+        });
+
+        // ==================== 【1. 全网免费开放音乐搜索核心实现】 ====================
+        searchBtn.addEventListener('click', searchMusic);
+
+        async function searchMusic() {
+            const keyword = searchInput.value.trim();
+            if (!keyword) return alert('请先写一下想要搜索的歌曲或歌手名字哦~');
+
+            bubble.innerText = "真昼正在努力帮周检索网络曲库中...";
+            listWrapper.innerHTML = `<li style="color:#666; text-align:center; padding-top:60px; font-size:0.8rem;">正在全网连线搜索中，请稍候...</li>`;
+
+            try {
+                // 使用开放、无跨域拦截的公益音乐多数据源聚合 API 进行查询
+                const response = await fetch(`https://api.v6.army/api/music?msg=${encodeURIComponent(keyword)}&type=json`);
+                const resData = await response.json();
+
+                if (resData.code !== 200 || !resData.data || resData.data.length === 0) {
+                    listWrapper.innerHTML = `<li style="color:#dd5555; text-align:center; padding-top:60px; font-size:0.8rem;">未检索到对应音源，可以更换词汇重试</li>`;
+                    bubble.innerText = "网络上似乎没有听到这首歌呢...";
+                    return;
+                }
+
+                // 洗出符合标准的结构并加载进云端结果阵列
+                onlineSongs = resData.data.map(item => ({
+                    id: item.id || Math.random(),
+                    name: item.song || "未命名曲目",
+                    artist: item.singer || "未知歌手",
+                    url: item.url, // 接口直返的公共MP3流地址，100%可以网页安全播放
+                    cover: item.picture || 'img/changpian.jpg',
+                    lrc: item.lrc || ""
+                }));
+
+                currentTab = 'online';
+                tabOnline.classList.add('active');
+                tabLocal.classList.remove('active');
+                
+                renderList();
+                bubble.innerText = `为您寻到了 ${onlineSongs.length} 首相关的网络源！`;
+
+            } catch (err) {
+                console.error(err);
+                listWrapper.innerHTML = `<li style="color:#dd5555; text-align:center; padding-top:60px; font-size:0.8rem;">接口响应超时或网络策略限制，请再次触发</li>`;
+                bubble.innerText = "网络连接出了点小差错。";
+            }
+        }
+
+        // ==================== 【2. 动态渲染右侧曲目列表面板】 ====================
+        function renderList() {
+            listWrapper.innerHTML = '';
+            const currentList = (currentTab === 'online') ? onlineSongs : localSongs;
+
+            if (currentList.length === 0) {
+                listWrapper.innerHTML = `<li style="color: #999; text-align: center; padding-top: 60px; font-size:0.8rem;">此栏目下目前空空如也哦</li>`;
+                return;
+            }
+
+            currentList.forEach((song, index) => {
+                const li = document.createElement('li');
+                li.className = `song-item ${index === currentIndex ? 'active' : ''}`;
+                
+                // 适配在线和本地的不同字段展示
+                const titleStr = song.name;
+                const artistStr = song.artist || "本地音频源";
+
+                li.innerHTML = `
+                    <div>${index + 1}. ${titleStr}</div>
+                    <div class="sub-info">${artistStr}</div>
+                `;
+
+                li.addEventListener('click', () => {
+                    playSelectedSong(index);
+                });
+                listWrapper.appendChild(li);
+            });
+        }
+
+        // 标签切换管理
+        tabOnline.addEventListener('click', () => {
+            currentTab = 'online';
+            tabOnline.classList.add('active');
+            tabLocal.classList.remove('active');
+            currentIndex = 0;
+            renderList();
+        });
+
+        tabLocal.addEventListener('click', () => {
+            currentTab = 'local';
+            tabLocal.classList.add('active');
+            tabOnline.classList.remove('active');
+            currentIndex = 0;
+            renderList();
+        });
+
+        // ==================== 【3. 智能音频装载与跨域防断发声引擎】 ====================
+        async function playSelectedSong(index) {
+            const currentList = (currentTab === 'online') ? onlineSongs : localSongs;
+            if (currentList.length === 0) return;
+
+            currentIndex = index;
+            renderList(); // 更新高亮状态
+
+            const targetSong = currentList[currentIndex];
+
+            // 1. 设置主标题及歌手
+            songTitle.innerText = targetSong.name;
+            songArtist.innerText = targetSong.artist;
+
+            // 2. 切入并处理音频流源地址
+            if (currentTab === 'online') {
+                audio.src = targetSong.url;
+                
+                // 处理动态歌词逻辑：若API未直连下发歌词，则生成动态伴奏占位歌词
+                if (targetSong.lrc) {
+                    parseLyric(targetSong.lrc);
+                } else {
+                    parseLyric(`[00:00.00] ${targetSong.name} - 正在享受云端畅听\n[00:02.00] 聆听当下，此曲目暂无全同步静态滚动歌词\n[00:08.00] 真昼正在陪你一起聆听优美旋律...`);
+                }
+            } else {
+                // 本地File Handle模式
+                const file = await targetSong.fileHandle.getFile();
+                audio.src = URL.createObjectURL(file);
+                parseLyric("[00:00.00] 正在播放周的本地文件\n[00:02.00] 陪伴在身边的每一秒，都有真昼在倾听。");
+            }
+
+            // 3. 执行物理播放并解锁音频轨道
+            playAudio();
+        }
+
+        // ==================== 【4. 歌词解析高亮与位置精准滚动运算】 ====================
+        function parseLyric(lrcText) {
+            lyricData = [];
+            lyricWrapper.innerHTML = '';
+            
+            const lines = lrcText.split('\n');
+            const timeReg = /\[(\d{2}):(\d{2})\.(\d{2,3})\]/;
+            
+            lines.forEach(line => {
+                const match = timeReg.exec(line);
+                if (match) {
+                    const minutes = parseInt(match[1]);
+                    const seconds = parseInt(match[2]);
+                    const milliseconds = parseInt(match[3]);
+                    const time = minutes * 60 + seconds + (milliseconds > 99 ? milliseconds/1000 : milliseconds/100);
+                    const text = line.replace(timeReg, '').trim();
+                    if(text) lyricData.push({ time, text });
+                }
+            });
+
+            if (lyricData.length === 0) {
+                lyricWrapper.innerHTML = `<div class="lyric-line active" style="margin-top:100px;">纯音乐，请尽情欣赏</div>`;
+                return;
+            }
+
+            lyricData.forEach((item, index) => {
+                const div = document.createElement('div');
+                div.className = 'lyric-line';
+                div.id = `lrc-${index}`;
+                div.innerText = item.text;
+                lyricWrapper.appendChild(div);
+            });
+        }
+
+        // 精准时间帧联动
+        audio.addEventListener('timeupdate', () => {
+            if (lyricData.length === 0) return;
+            
+            const currentTime = audio.currentTime;
+            let activeIndex = 0;
+
+            for (let i = 0; i < lyricData.length; i++) {
+                if (currentTime >= lyricData[i].time) activeIndex = i; else break;
+            }
+
+            const allLines = lyricWrapper.querySelectorAll('.lyric-line');
+            allLines.forEach(line => line.classList.remove('active'));
+            
+            const activeLine = document.getElementById(`lrc-${activeIndex}`);
+            if (activeLine) {
+                activeLine.classList.add('active');
+                // 每行以38px进行过渡补偿运算
+                lyricWrapper.style.transform = `translateY(-${activeIndex * 38}px)`;
+            }
+        });
+
+        // ==================== 【5. 页面控制响应及交互驱动】 ====================
+        function playAudio() {
+            audio.play().then(() => {
+                playBtn.innerText = '暂停';
+                disc.style.animationPlayState = 'running';
+                tonearm.classList.add('playing');
+            }).catch((err) => {
+                console.log("浏览器拦截或等待激活交互中:", err);
+            });
+        }
+
+        function pauseAudio() {
+            audio.pause();
+            playBtn.innerText = '播放';
+            disc.style.animationPlayState = 'paused';
+            tonearm.classList.remove('playing');
+        }
+
+        playBtn.addEventListener('click', () => {
+            if (audio.paused) playAudio(); else pauseAudio();
+        });
+
+        // 连续曲目切换
+        nextBtn.addEventListener('click', () => {
+            const currentList = (currentTab === 'online') ? onlineSongs : localSongs;
+            if (currentList.length > 0) {
+                let index = (currentIndex + 1) % currentList.length;
+                playSelectedSong(index);
+            }
+        });
+
+        prevBtn.addEventListener('click', () => {
+            const currentList = (currentTab === 'online') ? onlineSongs : localSongs;
+            if (currentList.length > 0) {
+                let index = currentIndex - 1;
+                if (index < 0) index = currentList.length - 1;
+                playSelectedSong(index);
+            }
+        });
+
+        audio.addEventListener('ended', () => {
+            const currentList = (currentTab === 'online') ? onlineSongs : localSongs;
+            if (currentList.length > 0) {
+                let index = (currentIndex + 1) % currentList.length;
+                playSelectedSong(index);
+            } else {
+                pauseAudio();
+            }
+        });
+
+        // ==================== 【6. 本地沙盒文件目录备用无缝导入】 ====================
+        selectFolderBtn.addEventListener('click', async () => {
+            try {
+                const dirHandle = await window.showDirectoryPicker();
+                localSongs = [];
+                for await (const entry of dirHandle.values()) {
+                    if (entry.kind === 'file' && /\.(mp3|wav|ogg|flac)$/i.test(entry.name)) {
+                        localSongs.push({
+                            name: entry.name.replace(/\.[^/.]+$/, ""),
+                            artist: "本地私有乐库",
+                            fileHandle: entry
+                        });
+                    }
+                }
+
+                if (localSongs.length === 0) return alert('在此文件夹中未检索到能兼容的本地MP3/WAV音频！');
+                localSongs.sort((a, b) => a.name.localeCompare(b.name));
+                
+                currentTab = 'local';
+                tabLocal.classList.add('active');
+                tabOnline.classList.remove('active');
+                
+                currentIndex = 0;
+                renderList();
+                playSelectedSong(0);
+                bubble.innerText = "已无缝切入周的本地大曲库！";
+
+            } catch (err) { 
+                console.warn("取消或拦截了文件夹读取流程", err); 
+            }
+        });
+    </script>
+</body>
+</html>
