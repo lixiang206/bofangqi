@@ -334,7 +334,7 @@
         .mahiru-character:hover .dialogue-bubble { opacity: 1; transform: translateY(0); }
 
         /* ===================================================
-           2. 纯移动端手机适配（仅在屏幕小于 768px 时生效）
+           2. 纯移动端手机适配（进行了轻量增强，包含播放通道解锁提示）
            =================================================== */
         @media (max-width: 768px) {
             body {
@@ -342,49 +342,99 @@
                 overflow-y: auto;
                 height: auto;
                 min-height: 100vh;
+                -webkit-overflow-scrolling: touch;
             }
 
             .main-wrapper {
                 flex-direction: column;
                 align-items: center;
                 gap: 20px;
-                padding: 15px;
+                padding: 20px 15px;
                 width: 100%;
                 box-sizing: border-box;
-                padding-bottom: 130px;
+                padding-bottom: 160px;
             }
 
             .player-container {
                 width: 100%;
                 max-width: 340px;
                 padding: 25px 20px 20px;
+                box-sizing: border-box;
             }
 
             .playlist-container {
                 width: 100%;
                 max-width: 340px;
-                height: 260px;
+                height: 280px;
+                box-sizing: border-box;
             }
 
             .mahiru-character {
+                position: fixed;
                 width: 110px;
                 height: 175px;
                 right: 10px;
-                bottom: -5px;
-                opacity: 0.9;
+                bottom: 0px;
+                opacity: 0.95;
+                z-index: 99;
             }
 
             .dialogue-bubble {
-                bottom: 150px;
+                position: fixed;
+                bottom: 155px;
                 right: 15px;
                 font-size: 0.75rem;
                 padding: 6px 12px;
+                z-index: 100;
             }
             .dialogue-bubble::after { right: 25px; }
+
+            /* 手机端首次进入的互动提示遮罩 */
+            #mobileTouchUnlock {
+                position: fixed;
+                top: 0; left: 0; width: 100%; height: 100%;
+                background: rgba(90, 75, 65, 0.4);
+                backdrop-filter: blur(4px);
+                -webkit-backdrop-filter: blur(4px);
+                z-index: 9999;
+                display: flex;
+                justify-content: center;
+                align-items: center;
+                color: #5A4B41;
+                font-weight: bold;
+            }
+            .unlock-box {
+                background: rgba(255, 255, 255, 0.95);
+                padding: 25px 30px;
+                border-radius: 20px;
+                text-align: center;
+                box-shadow: 0 10px 25px rgba(0,0,0,0.15);
+                border: 2px solid var(--mahiru-gold);
+                animation: pop 0.3s ease;
+            }
+            .unlock-box p { margin: 0 0 15px 0; font-size: 0.95rem; }
+            .unlock-box button {
+                background: #A79284; color: white; border: none; 
+                padding: 10px 24px; border-radius: 50px; font-size: 0.9rem;
+                cursor: pointer; box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+            }
+            @keyframes pop { from { transform: scale(0.8); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+        }
+
+        /* 在PC端隐藏手机解锁提示 */
+        @media (min-width: 769px) {
+            #mobileTouchUnlock { display: none !important; }
         }
     </style>
 </head>
 <body>
+
+    <div id="mobileTouchUnlock">
+        <div class="unlock-box">
+            <p>❀ 欢迎来到真昼的音乐盒 ❀<br><small style="color:#888; font-weight:normal;">点击下方按钮解锁手机端音频</small></p>
+            <button id="unlockBtn">进入音乐盒</button>
+        </div>
+    </div>
 
     <div class="decorations" id="decorations"></div>
 
@@ -397,8 +447,8 @@
                 </div>
             </div>
 
-            <div class="song-title" id="songTitle">未载入歌曲</div>
-            <div class="song-artist" id="songArtist">请选择歌单</div>
+            <div class="song-title" id="songTitle">正在加载歌单...</div>
+            <div class="song-artist" id="songArtist">请稍候</div>
 
             <div class="progress-wrapper">
                 <div class="progress-bar-container" id="progressBarContainer">
@@ -426,7 +476,7 @@
                 <button class="tab-btn" id="tabLocal">本地文件夹 (<span id="localCount">0</span>)</button>
             </div>
             <ul class="track-list" id="trackList">
-                <li style="color: #999; text-align: center; padding-top: 50px;">暂无歌曲</li>
+                <li style="color: #999; text-align: center; padding-top: 50px;">正在加载网页歌单...</li>
             </ul>
         </div>
     </div>
@@ -436,16 +486,6 @@
     </div>
 
     <script>
-        // ===================================================
-        // ⚙️ 网页歌单歌曲管理配置：把你在 music 文件夹下的音乐名字直接填在下面！
-        // ⚠️ 记得带上格式后缀（如 .mp3），名字需要与实际文件严格保持一致
-        // ===================================================
-        const myMusicFolderList = [
-            "tanyunxi.mp3",
-            "SpotiMate.io - Romantic Memories - 椎名真昼_CV.石見舞菜香_.mp3",
-            "xiamuji.mp3"
-        ];
-
         const audio = document.getElementById('myAudio');
         const playBtn = document.getElementById('playBtn');
         const prevBtn = document.getElementById('prevBtn');
@@ -474,26 +514,56 @@
         let localSongs = [];        
         let currentIndex = 0;       
 
-        // 静态化初始化函数：不再发送网络请求，100% 避免跨域限制
-        function initOnlinePlaylist() {
-            onlineSongs = myMusicFolderList.map(name => {
-                return {
-                    name: name,
-                    url: `./music/${encodeURIComponent(name)}`
-                };
-            });
+        // ===================================================
+        // 手机端专享：用户点击互动，静音空跑一次 audio 骗过系统权限限制
+        // ===================================================
+        const mobileTouchUnlock = document.getElementById('mobileTouchUnlock');
+        const unlockBtn = document.getElementById('unlockBtn');
+        
+        function unlockMobileAudio() {
+            // 给一串静音或极其微弱的控制，让系统认为用户已经在这个页面授权过音频播放
+            audio.play().then(() => {
+                audio.pause(); // 马上暂停，不影响后续正常加载
+            }).catch(e => console.log('音频通道激活中...'));
             
-            onlineCountUI.innerText = onlineSongs.length;
-            
-            if(currentMode === 'online') {
-                renderPlaylist();
-                if (onlineSongs.length > 0) {
-                    loadSong(0, false);
+            mobileTouchUnlock.style.display = 'none';
+        }
+        unlockBtn.addEventListener('click', unlockMobileAudio);
+        mobileTouchUnlock.addEventListener('click', unlockMobileAudio);
+
+        // 从 music 文件夹内抓取 list.json 的配置文件
+        async function initOnlinePlaylist() {
+            try {
+                const response = await fetch('./music/list.json');
+                if (!response.ok) throw new Error('无法读取 list.json');
+                
+                const fileNames = await response.json();
+                
+                // 将歌名转换成播放器需要的格式
+                onlineSongs = fileNames.map(name => {
+                    return {
+                        name: name,
+                        url: `./music/${encodeURIComponent(name)}`
+                    };
+                });
+                
+                onlineCountUI.innerText = onlineSongs.length;
+                
+                if(currentMode === 'online') {
+                    renderPlaylist();
+                    if (onlineSongs.length > 0) {
+                        loadSong(0, false);
+                    }
                 }
+            } catch (err) {
+                console.error('网页歌单加载失败:', err);
+                trackListUI.innerHTML = `<li style="color: #ff7875; text-align: center; padding-top: 40px;">歌单初始化失败<br><small style="color:#aaa;">请确保含有 music/list.json</small></li>`;
+                songTitle.innerText = "载入失败";
+                songArtist.innerText = "请检查配置文件";
             }
         }
 
-        // 背景粒子飘动
+        // 背景飘花效果
         function createDecorations() {
             const container = document.getElementById('decorations');
             const count = 12; 
@@ -512,7 +582,7 @@
         }
         createDecorations();
 
-        // 切换面板标签
+        // 选项卡切换
         tabOnline.addEventListener('click', () => {
             if(currentMode === 'online') return;
             currentMode = 'online';
@@ -542,11 +612,11 @@
             }
         });
 
-        // 导入本地磁盘文件夹功能（保持原样）
+        // 本地文件夹模式
         selectFolderBtn.addEventListener('click', async () => {
             try {
                 if (!window.showDirectoryPicker) {
-                    alert('当前移动端浏览器限制了文件读取 API，请使用 PC 端的 Chrome / Edge 浏览器操作本地文件夹导入。');
+                    alert('当前浏览器不支持此 API，请使用 PC 端的 Chrome / Edge 浏览器操作本地导入。');
                     return;
                 }
                 const dirHandle = await window.showDirectoryPicker();
@@ -638,7 +708,13 @@
         }
 
         function playAudio() {
-            audio.play().catch(err => console.log("已准备就绪，点击播放即可启动"));
+            // 移动端安全策略捕获处理
+            audio.play().catch(err => {
+                console.log("移动端音频拦截，等待进一步交互", err);
+                playBtn.innerText = '播放';
+                disc.style.animationPlayState = 'paused';
+                tonearm.classList.remove('playing');
+            });
             playBtn.innerText = '暂停';
             disc.style.animationPlayState = 'running';
             tonearm.classList.add('playing');
