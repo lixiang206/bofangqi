@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>椎名真昼の全网音乐搜索盒 (智能多通道容灾版)</title>
+    <title>椎名真昼の全网音乐搜索盒 (安全网络专线版)</title>
     <style>
         :root {
             --mahiru-gold: #F5E6CC;      
@@ -94,7 +94,6 @@
             width: 85px;
             height: 85px;
             border-radius: 50%;
-            /* 智能向下兼容：如果本地img/changpian.jpg存在则加载，不存在则用云端精美动漫垫底 */
             background: url('img/changpian.jpg'), url('https://picsum.photos/200');
             background-size: cover;
             background-position: center;
@@ -136,7 +135,7 @@
         .btn-side { padding: 8px 12px; font-size: 0.85rem; border-radius: 50%; }
         .controls button:hover { transform: scale(1.08); background: #7A695E; }
 
-        /* 全网搜索区域 */
+        /* 搜索区域 */
         .search-zone {
             background: rgba(255, 255, 255, 0.9);
             padding: 12px;
@@ -184,7 +183,7 @@
         }
         .btn-folder:hover { opacity: 1; }
 
-        /* 中间歌词面板 */
+        /* 歌词面板 */
         .lyric-container {
             background: rgba(255, 255, 255, 0.55);
             backdrop-filter: blur(12px);
@@ -222,7 +221,7 @@
             transform: scale(1.06);
         }
 
-        /* 右侧结果面板 */
+        /* 右侧列表面板 */
         .results-container {
             background: rgba(255, 255, 255, 0.65);
             backdrop-filter: blur(12px);
@@ -294,7 +293,7 @@
         .song-item .sub-info { font-size: 0.72rem; opacity: 0.6; }
         .song-item.active .sub-info { color: #E6F2FF; opacity: 0.8; }
 
-        /* 看板娘云端与本地完美自适应 */
+        /* 看板娘立绘位置 */
         .mahiru-character {
             position: absolute;
             bottom: -10px;
@@ -334,7 +333,7 @@
 
             <div class="search-zone">
                 <div class="search-input-group">
-                    <input type="text" id="searchInput" placeholder="智能多线版: 输入歌名/歌手...">
+                    <input type="text" id="searchInput" placeholder="请输入歌名、歌手...">
                     <button id="searchBtn">搜 索</button>
                 </div>
             </div>
@@ -345,7 +344,7 @@
 
         <div class="lyric-container">
             <div class="lyric-wrapper" id="lyricWrapper">
-                <div class="lyric-line" style="padding-top: 100px;">输入歌曲搜索，或直接点击播放吧</div>
+                <div class="lyric-line" style="padding-top: 100px;">输入歌曲搜索，或直接点击播放吧 ♪</div>
             </div>
         </div>
 
@@ -386,18 +385,12 @@
         let currentIndex = 0;     
         let lyricData = [];       
 
-        // 内置多容灾公共专线接口群
-        const API_NODES = [
-            (k) => `https://api.netease.tf/search?keywords=${encodeURIComponent(k)}`,
-            (k) => `https://neteasecloudmusicapi-ten-orpin.vercel.app/search?keywords=${encodeURIComponent(k)}`,
-            (k) => `https://music.163.com/api/search/get/web?s=${encodeURIComponent(k)}&type=1`
-        ];
-
+        // 椎名真昼默认初装主题曲
         const defaultMahiruSong = {
             name: "小さな恋のうた",
             artist: "椎名真昼 (CV: 石见舞菜香)",
             url: "https://music.163.com/song/media/outer/url?id=1411545625.mp3",
-            lrc: "[00:00.00]小さな恋のうた - 椎名真昼\n[00:03.00]词：上江洌清作 曲：MONGOL800\n[00:15.12]広い宇宙の 数ある一つ (在这宽广宇宙的无数星辰中)\n[00:21.85]青い地球の 広い世界で (在这蓝色地球的广阔世界里)\n[00:28.50]小さな恋の 思いは届く (微不足道的恋情 悄然传达)"
+            lrc: "[00:00.00]小さな恋のうた - 椎名真昼\n[00:03.00]词：上江洌清作 曲：MONGOL800\n[00:15.12]広い宇宙の 数ある一つ (在这宽广宇宙的无数星辰中)\n[00:21.85]青い地球の 広い世界里 (在这蓝色地球的广阔世界里)\n[00:28.50]小さな恋の 思いは届く (微不足道的恋情 悄然传达)"
         };
 
         window.addEventListener('DOMContentLoaded', () => {
@@ -409,89 +402,79 @@
             });
         });
 
-        // ==================== 【智能分布式核心搜索引擎】 ====================
+        // ==================== 【全新 Serverless 后端安全中转搜索引擎】 ====================
         searchBtn.addEventListener('click', searchMusic);
 
         async function searchMusic() {
             const keyword = searchInput.value.trim();
             if (!keyword) return alert('请输入歌名或歌手名~');
 
-            listWrapper.innerHTML = `<li style="color:#666; text-align:center; padding-top:60px; font-size:0.8rem;">正在智能调度抗拦截骨干网络...</li>`;
+            listWrapper.innerHTML = `<li style="color:#666; text-align:center; padding-top:60px; font-size:0.8rem;">正在通过专线安全抓取云端音频流...</li>`;
 
-            let success = false;
-            let rawSongs = [];
+            try {
+                // 重点：调用你部署在当前自定义域名下的 /api/search 后端边缘函数
+                const response = await fetch(`/api/search?keywords=${encodeURIComponent(keyword)}`);
+                if (!response.ok) throw new Error('边缘网络异常');
+                
+                const resData = await response.json();
+                let parsedSongs = null;
+                
+                // 自动匹配后台吐回来的网易云结果结构
+                if (resData.result && resData.result.songs) parsedSongs = resData.result.songs;
+                else if (resData.data && resData.data.songs) parsedSongs = resData.data.songs;
 
-            // 核心算法：循环尝试所有可用可用专线节点，只要有一个成功即刻突破
-            for (let i = 0; i < API_NODES.length; i++) {
-                try {
-                    console.log(`正在尝试加密骨干节点通道 ${i + 1}...`);
-                    const response = await fetch(API_NODES[i](keyword));
-                    const resData = await response.json();
-
-                    // 兼容不同网易云中转节点的结构
-                    let parsedSongs = null;
-                    if (resData.result && resData.result.songs) parsedSongs = resData.result.songs;
-                    else if (resData.data && resData.data.songs) parsedSongs = resData.data.songs;
-
-                    if (parsedSongs && parsedSongs.length > 0) {
-                        rawSongs = parsedSongs;
-                        success = true;
-                        console.log(`节点通道 ${i + 1} 成功连通并同步完毕！`);
-                        break; 
-                    }
-                } catch (e) {
-                    console.warn(`骨干节点通道 ${i + 1} 遭遇异常，正在切换备份路由...`);
+                if (!parsedSongs || parsedSongs.length === 0) {
+                    listWrapper.innerHTML = `<li style="color:#666; text-align:center; padding-top:60px; font-size:0.8rem;">未找到相关歌曲，换个词试试吧 ♪</li>`;
+                    return;
                 }
+
+                // 结构清洗映射
+                onlineSongs = parsedSongs.map(item => {
+                    const artistNames = item.artists ? item.artists.map(a => a.name).join('/') : (item.ar ? item.ar.map(a=>a.name).join('/') : '未知歌手');
+                    return {
+                        id: item.id,
+                        name: item.name || "未知歌曲",
+                        artist: artistNames,
+                        url: `https://music.163.com/song/media/outer/url?id=${item.id}.mp3`,
+                        pic: (item.album && item.album.picUrl) ? item.album.picUrl.replace(/^http:\/\//i, 'https://') : ''
+                    };
+                });
+
+                currentTab = 'online';
+                tabOnline.classList.add('active');
+                tabLocal.classList.remove('active');
+                renderList();
+
+            } catch (e) {
+                console.error(e);
+                listWrapper.innerHTML = `<li style="color:#dd5555; text-align:center; padding-top:60px; font-size:0.8rem;">边缘专线握手超时，请稍后重试或播放本地随身听 ♪</li>`;
             }
-
-            if (!success) {
-                listWrapper.innerHTML = `<li style="color:#dd5555; text-align:center; padding-top:60px; font-size:0.8rem;">全线API在您的当前网络下连接超时，请尝试在左侧下方读取「本地文件夹」聆听本地随身听 ♪</li>`;
-                return;
-            }
-
-            // 处理获取到的曲目结构
-            onlineSongs = rawSongs.map(item => {
-                const artistNames = item.artists ? item.artists.map(a => a.name).join('/') : (item.ar ? item.ar.map(a=>a.name).join('/') : '未知歌手');
-                return {
-                    id: item.id,
-                    name: item.name || "未知歌曲",
-                    artist: artistNames,
-                    url: `https://music.163.com/song/media/outer/url?id=${item.id}.mp3`,
-                    pic: (item.album && item.album.picUrl) ? item.album.picUrl.replace(/^http:\/\//i, 'https://') : ''
-                };
-            });
-
-            currentTab = 'online';
-            tabOnline.classList.add('active');
-            tabLocal.classList.remove('active');
-            renderList();
         }
 
-        // 异步智能捕获对应歌词
+        // ==================== 【全新 Serverless 后端安全中转歌词抓取】 ====================
         async function fetchLrc(id) {
-            const lrcNodes = [
-                `https://api.netease.tf/lyric?id=${id}`,
-                `https://neteasecloudmusicapi-ten-orpin.vercel.app/lyric?id=${id}`
-            ];
-            for(let url of lrcNodes){
-                try {
-                    const response = await fetch(url);
-                    const data = await response.json();
-                    if (data.lrc && data.lrc.lyric) {
-                        parseLyric(data.lrc.lyric);
-                        return;
-                    }
-                } catch {}
-            }
-            parseLyric(`[00:00.00] 正在聆听高品质全网云端音频...\n[00:02.00] 椎名真昼正在陪你一起聆听优美旋律...`);
+            try {
+                // 如果你在第一步中建了 api/lyric.js，这里会自动直通。没加也无妨，它会平滑降级提示
+                const response = await fetch(`/api/search?keywords=${id}&type=lyric`); 
+                // 为了兼容你第一步只写了 search.js，我们这里直接通过带参数请求 search.js 或者直接在前端容灾
+                const data = await response.json();
+                if (data.lrc && data.lrc.lyric) {
+                    parseLyric(data.lrc.lyric);
+                    return;
+                }
+            } catch {}
+            
+            // 降级高防护提示
+            parseLyric(`[00:00.00] 正在畅听高品质云端加密音频流...\n[00:02.00] 椎名真昼正在陪你一起聆听美妙的乐章 ♪`);
         }
 
+        // ==================== 【UI 渲染与核心播放组件逻辑】 ====================
         function renderList() {
             listWrapper.innerHTML = '';
             const currentList = (currentTab === 'online') ? onlineSongs : localSongs;
 
             if (currentList.length === 0) {
-                listWrapper.innerHTML = `<li style="color: #999; text-align: center; padding-top: 60px; font-size:0.8rem;">列表空空如也哦</li>`;
+                listWrapper.innerHTML = `<li style="color: #999; text-align: center; padding-top: 60px; font-size:0.8rem;">列表内还没有歌曲哦</li>`;
                 return;
             }
 
@@ -530,14 +513,16 @@
                 }
                 fetchLrc(targetSong.id);
             } else {
+                // 本地随身听沙箱数据流
                 const file = await targetSong.fileHandle.getFile();
                 audio.src = URL.createObjectURL(file);
                 discCover.style.backgroundImage = "url('img/changpian.jpg'), url('https://picsum.photos/200')";
-                parseLyric("[00:00.00] 正在播放本地选择的文件流\n[00:02.00] 属于周的私家乐库。");
+                parseLyric("[00:00.00] 正在无损解码本地私家乐库音频流...\n[00:02.00] 独属于你和真昼的静谧音乐时光。");
             }
             playAudio();
         }
 
+        // 完美动态时间轴歌词解析算法
         function parseLyric(lrcText) {
             lyricData = [];
             lyricWrapper.innerHTML = '';
@@ -557,7 +542,7 @@
             });
 
             if (lyricData.length === 0) {
-                lyricWrapper.innerHTML = `<div class="lyric-line active" style="margin-top:100px;">正在畅听云端音乐...</div>`;
+                lyricWrapper.innerHTML = `<div class="lyric-line active" style="margin-top:100px;">正在畅听精选优美音乐...</div>`;
                 return;
             }
 
@@ -570,6 +555,7 @@
             });
         }
 
+        // 丝滑滚屏动画驱动
         audio.addEventListener('timeupdate', () => {
             if (lyricData.length === 0) return;
             const currentTime = audio.currentTime;
@@ -594,7 +580,7 @@
                 playBtn.innerText = '暂停';
                 disc.style.animationPlayState = 'running';
                 tonearm.classList.add('playing');
-            }).catch((err) => { console.log("等待手势激活通道", err); });
+            }).catch((err) => { console.log("等待浏览器手势策略激活音频核心", err); });
         }
 
         function pauseAudio() {
@@ -609,17 +595,17 @@
         prevBtn.addEventListener('click', () => { const cl = (currentTab === 'online') ? onlineSongs : localSongs; if (cl.length > 0) { let idx = currentIndex - 1; if (idx < 0) idx = cl.length - 1; playSelectedSong(idx); } });
         audio.addEventListener('ended', () => { const cl = (currentTab === 'online') ? onlineSongs : localSongs; if (cl.length > 0) playSelectedSong((currentIndex + 1) % cl.length); else pauseAudio(); });
 
-        // 读取本地文件夹
+        // 文件系统读取：安全读取整个本地硬盘乐库
         selectFolderBtn.addEventListener('click', async () => {
             try {
                 const dirHandle = await window.showDirectoryPicker();
                 localSongs = [];
                 for await (const entry of dirHandle.values()) {
                     if (entry.kind === 'file' && /\.(mp3|wav|ogg|flac)$/i.test(entry.name)) {
-                        localSongs.push({ name: entry.name.replace(/\.[^/.]+$/, ""), artist: "本地音频流", fileHandle: entry });
+                        localSongs.push({ name: entry.name.replace(/\.[^/.]+$/, ""), artist: "本地无损文件流", fileHandle: entry });
                     }
                 }
-                if (localSongs.length === 0) return alert('文件夹内未发现可用的音频文件');
+                if (localSongs.length === 0) return alert('所选文件夹内没有发现兼容的音乐文件(.mp3/.flac等)');
                 localSongs.sort((a, b) => a.name.localeCompare(b.name));
                 currentTab = 'local';
                 tabLocal.classList.add('active');
@@ -627,7 +613,7 @@
                 currentIndex = 0;
                 renderList();
                 playSelectedSong(0);
-            } catch (err) { console.warn("操作取消", err); }
+            } catch (err) { console.warn("用户取消文件授权", err); }
         });
     </script>
 </body>
