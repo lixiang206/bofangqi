@@ -1,32 +1,42 @@
 // api/search.js
-// Vercel Serverless 后端云函数：负责抗拦截抓取歌曲信息
+// 兼容性更强的高稳健版 Vercel Serverless 后端函数
+
 export default async function handler(req, res) {
-    // 允许前端跨域访问
+    // 允许前端跨域
     res.setHeader('Access-Control-Allow-Origin', '*');
     res.setHeader('Access-Control-Allow-Methods', 'GET');
 
+    // 获取前端传过来的关键词
     const { keywords } = req.query;
     if (!keywords) {
         return res.status(400).json({ error: 'Keywords required' });
     }
 
-    // 后端备用骨干通道群（在云端服务器环境下请求，成功率极高）
+    // 多组超高可用性的网易云镜像骨干节点
     const targets = [
         `https://api.netease.tf/search?keywords=${encodeURIComponent(keywords)}`,
-        `https://neteasecloudmusicapi-ten-orpin.vercel.app/search?keywords=${encodeURIComponent(keywords)}`
+        `https://neteasecloudmusicapi-ten-orpin.vercel.app/search?keywords=${encodeURIComponent(keywords)}`,
+        `https://music.polyw.me/search?keywords=${encodeURIComponent(keywords)}`
     ];
 
+    // 挨个尝试节点，谁快用谁
     for (let url of targets) {
         try {
-            const response = await fetch(url, { signal: AbortSignal.timeout(4000) }); // 4秒超时控制
-            if (response.ok) {
+            // 使用传统的 Promise.race 来控制5秒强制超时，防止 Vercel 函数死锁
+            const timeoutPromise = new Promise((_, reject) => setTimeout(() => reject(new Error('Timeout')), 5000));
+            const fetchPromise = fetch(url);
+            
+            const response = await Promise.race([fetchPromise, timeoutPromise]);
+
+            if (response && response.ok) {
                 const data = await response.json();
                 return res.status(200).json(data);
             }
         } catch (e) {
-            console.error(`云端中转节点失败，正在调度备份链路...`);
+            console.log(`当前节点抓取失败，正在切换下一条云专线...`);
         }
     }
 
-    return res.status(500).json({ error: '所有云端节点连接超时' });
+    // 如果所有节点都挂了，返回500
+    return res.status(500).json({ error: 'All backend nodes timed out' });
 }
