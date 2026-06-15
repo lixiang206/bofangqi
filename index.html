@@ -465,29 +465,28 @@
         let currentIndex = 0;       
 
         // 核心升级：直接从 music 文件夹内抓取 list.json 的配置文件
-        async function initOnlinePlaylist() {
-            try {
-                const response = await fetch('./music/list.json');
-                if (!response.ok) throw new Error('无法读取 list.json');
-                
-                const fileNames = await response.json();
-                
-                // 将歌名转换成播放器需要的格式
-                onlineSongs = fileNames.map(name => {
-                    return {
-                        name: name,
-                        url: `./music/${encodeURIComponent(name)}`
-                    };
-                });
-                
-                onlineCountUI.innerText = onlineSongs.length;
-                
-                if(currentMode === 'online') {
-                    renderPlaylist();
-                    if (onlineSongs.length > 0) {
-                        loadSong(0, false);
-                    }
-                }
+        // 替换掉原本的 async function initOnlinePlaylist() 这一段
+function initOnlinePlaylist() {
+    // 终极兼容：直接在这里写死你的歌名，无视任何浏览器跨域限制！
+    const staticList = [
+        "夏祭り.mp3",
+        "SpotiMate.io - Romantic Memories - 椎名真昼_CV.石見舞菜香_.mp3",
+        "叹云兮.mp3"
+    ];
+    
+    onlineSongs = staticList.map(name => {
+        return {
+            name: name,
+            url: `./music/${encodeURIComponent(name)}`
+        };
+    });
+    
+    onlineCountUI.innerText = onlineSongs.length;
+    renderPlaylist();
+    if (onlineSongs.length > 0) {
+        loadSong(0, false);
+    }
+}
             } catch (err) {
                 console.error('网页歌单加载失败:', err);
                 trackListUI.innerHTML = `<li style="color: #ff7875; text-align: center; padding-top: 40px;">歌单初始化失败<br><small style="color:#aaa;">请确保含有 music/list.json</small></li>`;
