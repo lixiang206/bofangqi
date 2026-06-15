@@ -6,7 +6,7 @@
     <title>椎名真昼の治愈音乐盒</title>
     <style>
         /* ===================================================
-           1. 电脑端原始样式
+           1. 电脑端原始样式（完全保留，未做任何改变）
            =================================================== */
         :root {
             --mahiru-gold: #F5E6CC;      
@@ -207,7 +207,7 @@
         }
         .btn-folder:hover { background: #8B7E74; }
 
-        /* ================= 右侧动态歌单面板（增加切页标签样式） ================= */
+        /* ================= 右侧动态歌单面板 ================= */
         .playlist-container {
             background: rgba(255, 255, 255, 0.65);
             backdrop-filter: blur(12px);
@@ -222,7 +222,6 @@
             width: 280px;
         }
 
-        /* 新增：选项卡样式 */
         .playlist-tabs {
             display: flex;
             gap: 10px;
@@ -247,7 +246,6 @@
             opacity: 1;
             position: relative;
         }
-        /* 激活选项卡的小下划线 */
         .tab-btn.active::after {
             content: '';
             position: absolute;
@@ -399,8 +397,8 @@
                 </div>
             </div>
 
-            <div class="song-title" id="songTitle">未载入歌曲</div>
-            <div class="song-artist" id="songArtist">请选择歌单</div>
+            <div class="song-title" id="songTitle">正在加载歌单...</div>
+            <div class="song-artist" id="songArtist">请稍候</div>
 
             <div class="progress-wrapper">
                 <div class="progress-bar-container" id="progressBarContainer">
@@ -428,7 +426,7 @@
                 <button class="tab-btn" id="tabLocal">本地文件夹 (<span id="localCount">0</span>)</button>
             </div>
             <ul class="track-list" id="trackList">
-                <li style="color: #999; text-align: center; padding-top: 50px;">暂无歌曲</li>
+                <li style="color: #999; text-align: center; padding-top: 50px;">正在加载网页歌单...</li>
             </ul>
         </div>
     </div>
@@ -438,15 +436,6 @@
     </div>
 
     <script>
-        // ===================================================
-        // ⚙️ 网页歌单核心配置：在这里手动填入你的 music 文件夹里的歌曲文件名
-        // ===================================================
-        const onlineMusicList = [
-            "第一首你要播的歌名.mp3",
-            "温柔的治愈曲.wav",
-            "椎名真昼角色歌.mp3"
-        ];
-
         const audio = document.getElementById('myAudio');
         const playBtn = document.getElementById('playBtn');
         const prevBtn = document.getElementById('prevBtn');
@@ -470,25 +459,40 @@
         const onlineCountUI = document.getElementById('onlineCount');
         const localCountUI = document.getElementById('localCount');
 
-        let currentMode = 'online'; // 两种模式: 'online' (网页music文件夹) 或者是 'local' (本地选取)
-        let onlineSongs = [];       // 网页歌曲队列
-        let localSongs = [];        // 本地选取文件队列
-        let currentIndex = 0;       // 当前播放索引
+        let currentMode = 'online'; 
+        let onlineSongs = [];       
+        let localSongs = [];        
+        let currentIndex = 0;       
 
-        // 初始化网页内置歌单数据
-        function initOnlinePlaylist() {
-            onlineSongs = onlineMusicList.map(name => {
-                return {
-                    name: name,
-                    url: `./music/${encodeURIComponent(name)}`, // 对应你创建的 music 文件夹绝对/相对路径
-                    type: 'online'
-                };
-            });
-            onlineCountUI.innerText = onlineSongs.length;
-            // 页面首次打开，默认渲染网页歌单
-            renderPlaylist();
-            if (onlineSongs.length > 0) {
-                loadSong(0, false);
+        // 核心升级：直接从 music 文件夹内抓取 list.json 的配置文件
+        async function initOnlinePlaylist() {
+            try {
+                const response = await fetch('./music/list.json');
+                if (!response.ok) throw new Error('无法读取 list.json');
+                
+                const fileNames = await response.json();
+                
+                // 将歌名转换成播放器需要的格式
+                onlineSongs = fileNames.map(name => {
+                    return {
+                        name: name,
+                        url: `./music/${encodeURIComponent(name)}`
+                    };
+                });
+                
+                onlineCountUI.innerText = onlineSongs.length;
+                
+                if(currentMode === 'online') {
+                    renderPlaylist();
+                    if (onlineSongs.length > 0) {
+                        loadSong(0, false);
+                    }
+                }
+            } catch (err) {
+                console.error('网页歌单加载失败:', err);
+                trackListUI.innerHTML = `<li style="color: #ff7875; text-align: center; padding-top: 40px;">歌单初始化失败<br><small style="color:#aaa;">请确保含有 music/list.json</small></li>`;
+                songTitle.innerText = "载入失败";
+                songArtist.innerText = "请检查配置文件";
             }
         }
 
@@ -511,17 +515,20 @@
         }
         createDecorations();
 
-        // 切换到网页歌单选项卡
+        // 选项卡切换
         tabOnline.addEventListener('click', () => {
             if(currentMode === 'online') return;
             currentMode = 'online';
             tabOnline.classList.add('active');
             tabLocal.classList.remove('active');
             renderPlaylist();
-            loadSong(0, false);
+            if(onlineSongs.length > 0) {
+                loadSong(0, false);
+            } else {
+                trackListUI.innerHTML = `<li style="color: #999; text-align: center; padding-top: 50px;">网页歌单为空</li>`;
+            }
         });
 
-        // 切换到本地文件夹选项卡
         tabLocal.addEventListener('click', () => {
             if(currentMode === 'local') return;
             currentMode = 'local';
@@ -538,7 +545,7 @@
             }
         });
 
-        // 打开本地文件夹按钮
+        // 本地文件夹模式保持不变
         selectFolderBtn.addEventListener('click', async () => {
             try {
                 if (!window.showDirectoryPicker) {
@@ -550,7 +557,7 @@
 
                 for await (const entry of dirHandle.values()) {
                     if (entry.kind === 'file' && /\.(mp3|wav|ogg|flac)$/i.test(entry.name)) {
-                        localSongs.push(entry); // 本地存储的是 fileHandle
+                        localSongs.push(entry); 
                     }
                 }
 
@@ -562,27 +569,29 @@
                 localSongs.sort((a, b) => a.name.localeCompare(b.name));
                 localCountUI.innerText = localSongs.length;
 
-                // 载入成功后自动切换到本地歌单分页
                 currentMode = 'local';
                 tabLocal.classList.add('active');
                 tabOnline.classList.remove('active');
                 
                 renderPlaylist();
                 await loadSong(0, true);
-                bubble.innerText = "成功读取了 " + localSongs.length + " 首本地歌，真厉害~";
+                bubble.innerText = "成功读取了 " + localSongs.length + " 首本地歌曲~";
 
             } catch (err) {
                 console.error('用户取消或读取失败:', err);
             }
         });
 
-        // 渲染统一歌单
         function renderPlaylist() {
             trackListUI.innerHTML = '';
             const activeList = (currentMode === 'online') ? onlineSongs : localSongs;
 
             if (activeList.length === 0 && currentMode === 'local') {
                 trackListUI.innerHTML = `<li style="color: #999; text-align: center; padding-top: 50px;">暂无本地歌曲</li>`;
+                return;
+            }
+            if (activeList.length === 0 && currentMode === 'online') {
+                trackListUI.innerHTML = `<li style="color: #999; text-align: center; padding-top: 50px;">网页歌单内没有歌曲</li>`;
                 return;
             }
 
@@ -599,14 +608,12 @@
             updateActiveHighlight();
         }
 
-        // 高亮正在播放的行
         function updateActiveHighlight() {
             const items = trackListUI.querySelectorAll('.track-item');
             items.forEach(item => item.classList.remove('active'));
             if(items[currentIndex]) items[currentIndex].classList.add('active');
         }
 
-        // 加载歌曲核心
         async function loadSong(index, autoPlay = false) {
             const activeList = (currentMode === 'online') ? onlineSongs : localSongs;
             if (activeList.length === 0) return;
@@ -614,13 +621,11 @@
             currentIndex = index;
             
             if (currentMode === 'online') {
-                // 网页内置 music 文件夹模式
                 const song = activeList[currentIndex];
                 audio.src = song.url;
                 songTitle.innerText = song.name.replace(/\.[^/.]+$/, "");
                 songArtist.innerText = "网页内置歌单";
             } else {
-                // 本地磁盘文件夹模式
                 const fileHandle = activeList[currentIndex];
                 const file = await fileHandle.getFile();
                 audio.src = URL.createObjectURL(file);
@@ -636,7 +641,7 @@
         }
 
         function playAudio() {
-            audio.play().catch(err => console.log("等待交互后播放"));
+            audio.play().catch(err => console.log("等待用户交互后播放"));
             playBtn.innerText = '暂停';
             disc.style.animationPlayState = 'running';
             tonearm.classList.add('playing');
@@ -655,7 +660,6 @@
             if (audio.paused) { playAudio(); } else { pauseAudio(); }
         });
 
-        // 上一首
         prevBtn.addEventListener('click', () => {
             const activeList = (currentMode === 'online') ? onlineSongs : localSongs;
             if (activeList.length === 0) return;
@@ -664,7 +668,6 @@
             loadSong(nextIndex, true);
         });
 
-        // 下一首
         nextBtn.addEventListener('click', () => {
             const activeList = (currentMode === 'online') ? onlineSongs : localSongs;
             if (activeList.length === 0) return;
@@ -673,7 +676,6 @@
             loadSong(nextIndex, true);
         });
 
-        // 播放结束自动切歌
         audio.addEventListener('ended', () => {
             const activeList = (currentMode === 'online') ? onlineSongs : localSongs;
             if (activeList.length === 0) return;
@@ -682,7 +684,6 @@
             loadSong(nextIndex, true);
         });
 
-        // 进度条控制
         function formatTime(seconds) {
             if (isNaN(seconds)) return '00:00';
             const mins = Math.floor(seconds / 60);
@@ -715,7 +716,6 @@
             bubble.innerText = quotes[Math.floor(Math.random() * quotes.length)];
         });
 
-        // 页面载入时，初始化网页歌单
         window.addEventListener('DOMContentLoaded', initOnlinePlaylist);
     </script>
 </body>
