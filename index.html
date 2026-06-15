@@ -10,6 +10,7 @@
             --mahiru-pink: #FFF0F5;      
             --mahiru-blue: #E6F2FF;      
             --text-color: #5A4B41;       
+            --accent-gold: #E6C594;
         }
 
         body {
@@ -26,6 +27,31 @@
             position: relative;
         }
 
+        /* ================= 页面装饰：背景粒子 ================= */
+        .decorations {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            top: 0;
+            left: 0;
+            pointer-events: none;
+            z-index: 1;
+        }
+
+        .petal {
+            position: absolute;
+            background: rgba(245, 230, 204, 0.6);
+            border-radius: 50% 0 50% 50%;
+            animation: float 10s infinite linear;
+        }
+
+        @keyframes float {
+            0% { transform: translateY(-10px) translateX(0) rotate(0deg); opacity: 0; }
+            10% { opacity: 1; }
+            90% { opacity: 1; }
+            100% { transform: translateY(105vh) translateX(100px) rotate(360deg); opacity: 0; }
+        }
+
         /* 核心布局：左边放播放器，右边放动态歌单 */
         .main-wrapper {
             display: flex;
@@ -36,22 +62,23 @@
 
         /* ================= 播放器主体 ================= */
         .player-container {
-            background: rgba(255, 255, 255, 0.75);
+            background: rgba(255, 255, 255, 0.78);
             backdrop-filter: blur(12px);
             -webkit-backdrop-filter: blur(12px);
-            padding: 40px 30px;
+            padding: 35px 30px 25px;
             border-radius: 28px;
-            box-shadow: 0 15px 35px rgba(90, 75, 65, 0.12);
+            box-shadow: 0 15px 35px rgba(90, 75, 65, 0.12), 0 0 20px rgba(245, 230, 204, 0.5);
             text-align: center;
             width: 320px;
-            border: 2px solid rgba(255, 255, 255, 0.6);
+            border: 2px solid rgba(255, 255, 255, 0.7);
+            transition: box-shadow 0.3s ease;
         }
 
         .disc-area {
             position: relative;
             width: 200px;
             height: 200px;
-            margin: 0 auto 25px;
+            margin: 0 auto 20px;
         }
 
         .tonearm {
@@ -101,12 +128,46 @@
         .song-title {
             font-size: 1.15rem;
             font-weight: bold;
-            margin-bottom: 6px;
+            margin-bottom: 4px;
             white-space: nowrap;
             overflow: hidden;
             text-overflow: ellipsis;
         }
-        .song-artist { font-size: 0.85rem; opacity: 0.75; margin-bottom: 20px; }
+        .song-artist { font-size: 0.85rem; opacity: 0.75; margin-bottom: 15px; }
+
+        /* ================= 新增：进度条样式 ================= */
+        .progress-wrapper {
+            margin-bottom: 20px;
+            padding: 0 5px;
+        }
+
+        .progress-bar-container {
+            width: 100%;
+            height: 6px;
+            background: rgba(90, 75, 65, 0.1);
+            border-radius: 10px;
+            cursor: pointer;
+            position: relative;
+            margin-bottom: 6px;
+        }
+
+        .progress-bar {
+            height: 100%;
+            width: 0%;
+            background: linear-gradient(90deg, var(--accent-gold), var(--text-color));
+            border-radius: 10px;
+            position: absolute;
+            top: 0;
+            left: 0;
+            transition: width 0.1s linear;
+        }
+
+        .time-info {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.75rem;
+            opacity: 0.7;
+        }
 
         /* 控制按钮布局 */
         .controls {
@@ -114,7 +175,7 @@
             justify-content: center;
             align-items: center;
             gap: 15px;
-            margin-bottom: 20px;
+            margin-bottom: 15px;
         }
 
         .controls button {
@@ -135,16 +196,20 @@
             padding: 8px 16px;
             border-radius: 8px;
             font-size: 0.85rem;
+            color: white;
+            border: none;
+            cursor: pointer;
+            transition: background 0.2s;
         }
+        .btn-folder:hover { background: #8B7E74; }
 
-        /* ================= 5. 右侧动态歌单面板 ================= */
+        /* ================= 右侧动态歌单面板 ================= */
         .playlist-container {
             background: rgba(255, 255, 255, 0.65);
             backdrop-filter: blur(12px);
             -webkit-backdrop-filter: blur(12px);
             padding: 25px;
             border-radius: 28px;
-            width: 28px0px;
             max-height: 380px;
             box-shadow: 0 15px 35px rgba(90, 75, 65, 0.08);
             border: 2px solid rgba(255, 255, 255, 0.5);
@@ -166,9 +231,15 @@
             list-style: none;
             padding: 0;
             margin: 0;
-            overflow-y: auto; /* 歌曲多了可以滚动 */
+            overflow-y: auto; 
             flex-grow: 1;
         }
+
+        /* 自定义歌单滚动条 */
+        .track-list::-webkit-scrollbar { width: 6px; }
+        .track-list::-webkit-scrollbar-track { background: transparent; }
+        .track-list::-webkit-scrollbar-thumb { background: rgba(90, 75, 65, 0.2); border-radius: 10px; }
+        .track-list::-webkit-scrollbar-thumb:hover { background: rgba(90, 75, 65, 0.4); }
 
         .track-item {
             padding: 10px 12px;
@@ -189,14 +260,14 @@
             font-weight: bold;
         }
 
-        /* ================= 6. 真昼看板娘皮肤 ================= */
+        /* ================= 真昼看板娘皮肤 ================= */
         .mahiru-character {
             position: absolute;
             bottom: -20px;
             right: 30px;
             width: 220px;
             height: 350px;
-            z-index: 1;
+            z-index: 3;
             cursor: pointer;
             transition: all 0.5s ease;
             background: url('img/lihui.png') no-repeat bottom center;
@@ -219,6 +290,7 @@
             transition: all 0.4s ease;
             pointer-events: none;
             white-space: nowrap;
+            z-index: 4;
         }
 
         .dialogue-bubble::after {
@@ -236,6 +308,8 @@
 </head>
 <body>
 
+    <div class="decorations" id="decorations"></div>
+
     <div class="main-wrapper">
         <div class="player-container">
             <div class="disc-area">
@@ -247,6 +321,16 @@
 
             <div class="song-title" id="songTitle">未载入文件夹</div>
             <div class="song-artist" id="songArtist">请点击下方载入本地音乐</div>
+
+            <div class="progress-wrapper">
+                <div class="progress-bar-container" id="progressBarContainer">
+                    <div class="progress-bar" id="progressBar"></div>
+                </div>
+                <div class="time-info">
+                    <span id="currentTime">00:00</span>
+                    <span id="totalTime">00:00</span>
+                </div>
+            </div>
 
             <div class="controls">
                 <button class="btn-side" id="prevBtn">⏮</button>
@@ -284,19 +368,42 @@
         const trackCountUI = document.getElementById('trackCount');
         const mahiruSkin = document.getElementById('mahiruSkin');
         const bubble = document.getElementById('bubble');
+        
+        // 新增进度条DOM句柄
+        const progressBarContainer = document.getElementById('progressBarContainer');
+        const progressBar = document.getElementById('progressBar');
+        const currentTimeUI = document.getElementById('currentTime');
+        const totalTimeUI = document.getElementById('totalTime');
 
         let songs = [];           // 存放读取到的音乐文件句柄
         let currentIndex = 0;     // 当前播放索引
 
+        // 动态生成背景樱花/光斑装饰
+        function createDecorations() {
+            const container = document.getElementById('decorations');
+            const count = 15; // 装饰粒子数量
+            for (let i = 0; i < count; i++) {
+                const petal = document.createElement('div');
+                petal.className = 'petal';
+                petal.style.left = Math.random() * 100 + 'vw';
+                petal.style.top = Math.random() * -20 + 'px';
+                const size = Math.random() * 8 + 6;
+                petal.style.width = size + 'px';
+                petal.style.height = size + 'px';
+                petal.style.animationDelay = Math.random() * 8 + 's';
+                petal.style.animationDuration = Math.random() * 6 + 8 + 's';
+                container.appendChild(petal);
+            }
+        }
+        createDecorations();
+
         // 1. 核心：读取本地文件夹
         selectFolderBtn.addEventListener('click', async () => {
             try {
-                // 弹出系统原生文件夹选择框
                 const dirHandle = await window.showDirectoryPicker();
                 songs = [];
                 trackListUI.innerHTML = '';
 
-                // 遍历文件夹内文件，筛选出 mp3 / wav / ogg
                 for await (const entry of dirHandle.values()) {
                     if (entry.kind === 'file' && /\.(mp3|wav|ogg|flac)$/i.test(entry.name)) {
                         songs.push(entry);
@@ -308,13 +415,10 @@
                     return;
                 }
 
-                // 按文件名排序
                 songs.sort((a, b) => a.name.localeCompare(b.name));
                 trackCountUI.innerText = songs.length;
 
-                // 渲染右侧动态歌单
                 renderPlaylist();
-                // 默认加载第一首
                 await loadSong(0);
                 bubble.innerText = "成功读取了 " + songs.length + " 首歌，请聆听吧~";
 
@@ -329,11 +433,9 @@
             songs.forEach((fileHandle, index) => {
                 const li = document.createElement('li');
                 li.className = 'track-item';
-                // 去掉文件后缀显示
                 li.innerText = `${index + 1}. ${fileHandle.name.replace(/\.[^/.]+$/, "")}`;
                 li.setAttribute('data-index', index);
                 
-                // 点击歌单内单曲直接播放
                 li.addEventListener('click', () => {
                     loadSong(index, true);
                 });
@@ -341,7 +443,7 @@
             });
         }
 
-        // 3. 将本地文件句柄转换为可播放的 URL
+        // 3. 加载歌曲
         async function loadSong(index, autoPlay = false) {
             if (songs.length === 0) return;
             
@@ -349,18 +451,19 @@
             const fileHandle = songs[currentIndex];
             const file = await fileHandle.getFile();
             
-            // 关键：将本地二进制文件生成一个临时的浏览器可读 URL
             const fileURL = URL.createObjectURL(file);
             audio.src = fileURL;
             
-            // 更新界面信息
             songTitle.innerText = file.name.replace(/\.[^/.]+$/, "");
             songArtist.innerText = "本地音乐文件夹";
 
-            // 高亮当前播放的歌单项
             const items = trackListUI.querySelectorAll('.track-item');
             items.forEach(item => item.classList.remove('active'));
             if(items[currentIndex]) items[currentIndex].classList.add('active');
+
+            // 重置进度条
+            progressBar.style.width = '0%';
+            currentTimeUI.innerText = '00:00';
 
             if (autoPlay) {
                 playAudio();
@@ -389,31 +492,63 @@
             if (audio.paused) { playAudio(); } else { pauseAudio(); }
         });
 
-        // 5. 切歌功能（上一首/下一首）
+        // 5. 切歌功能
         prevBtn.addEventListener('click', () => {
             if (songs.length === 0) return;
             let nextIndex = currentIndex - 1;
-            if (nextIndex < 0) nextIndex = songs.length - 1; // 循环到最后一首
+            if (nextIndex < 0) nextIndex = songs.length - 1;
             loadSong(nextIndex, true);
         });
 
         nextBtn.addEventListener('click', () => {
             if (songs.length === 0) return;
             let nextIndex = currentIndex + 1;
-            if (nextIndex >= songs.length) nextIndex = 0; // 循环到第一首
+            if (nextIndex >= songs.length) nextIndex = 0;
             loadSong(nextIndex, true);
         });
 
-        // 自动播放下一首
         audio.addEventListener('ended', () => {
             let nextIndex = currentIndex + 1;
             if (nextIndex >= songs.length) nextIndex = 0;
             loadSong(nextIndex, true);
         });
 
-        // 真昼戳一戳随机对话
+        // ================= 新增：进度条更新与控制逻辑 =================
+        
+        // 格式化时间为 00:00 格式
+        function formatTime(seconds) {
+            if (isNaN(seconds)) return '00:00';
+            const mins = Math.floor(seconds / 60);
+            const secs = Math.floor(seconds % 60);
+            return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+        }
+
+        // 监听音频时间更新进度条
+        audio.addEventListener('timeupdate', () => {
+            if (!isNaN(audio.duration)) {
+                const progressPercent = (audio.currentTime / audio.duration) * 100;
+                progressBar.style.width = `${progressPercent}%`;
+                currentTimeUI.innerText = formatTime(audio.currentTime);
+            }
+        });
+
+        // 监听音频加载完成后获取总时间
+        audio.addEventListener('loadedmetadata', () => {
+            totalTimeUI.innerText = formatTime(audio.duration);
+        });
+
+        // 点击/拖动进度条跳转播放时间
+        progressBarContainer.addEventListener('click', (e) => {
+            if (songs.length === 0 || isNaN(audio.duration)) return;
+            const containerWidth = progressBarContainer.clientWidth;
+            const clickX = e.offsetX; // 获取点击位置相对于进度条左侧的距离
+            const newTime = (clickX / containerWidth) * audio.duration;
+            audio.currentTime = newTime;
+        });
+
+        // 真昼互动对话
         mahiruSkin.addEventListener('click', () => {
-            const quotes = ["别突然戳我呀...", "听音乐的时候要保持好心情哦。", "需要我为你泡杯茶吗？"];
+            const quotes = ["别突然戳我呀...", "听音乐的时候要保持好心情哦。", "需要我为你泡杯茶吗？", "这首歌，我也很喜欢呢。"];
             bubble.innerText = quotes[Math.floor(Math.random() * quotes.length)];
         });
     </script>
