@@ -3,7 +3,7 @@
 // ========================================================
 
 // 1. 定义本地网易云 API 穿透到公网的最新地址
-const BASE_URL = "https://slimy-grapes-bathe.loca.lt";
+const BASE_URL = "https://hip-gifts-drop.loca.lt";
 
 /**
  * 歌曲搜索函数
