@@ -334,95 +334,101 @@
         .mahiru-character:hover .dialogue-bubble { opacity: 1; transform: translateY(0); }
 
         /* ===================================================
-           2. 纯移动端手机适配（针对立绘固定和层级进行了核心优化）
-           =================================================== */
-        @media (max-width: 768px) {
-            body {
-                align-items: flex-start;
-                overflow-y: auto;
-                height: auto;
-                min-height: 100vh;
-                position: relative; /* 确立绝对定位基准 */
-                -webkit-overflow-scrolling: touch;
-            }
+   2. 纯移动端手机适配（修复版：立绘完美悬浮且不随滚动位移）
+   =================================================== */
+@media (max-width: 768px) {
+    body {
+        align-items: flex-start;
+        overflow-y: auto;
+        height: auto;
+        min-height: 100vh;
+        -webkit-overflow-scrolling: touch;
+    }
 
-            .main-wrapper {
-                flex-direction: column;
-                align-items: center;
-                gap: 20px;
-                padding: 20px 15px;
-                width: 100%;
-                box-sizing: border-box;
-                padding-bottom: 180px; /* 留出空间给底部绝对定位的立绘 */
-            }
+    .main-wrapper {
+        flex-direction: column;
+        align-items: center;
+        gap: 20px;
+        padding: 20px 15px;
+        width: 100%;
+        box-sizing: border-box;
+        /* 底部留出足够的内边距，防止歌单最下面两首歌被固定的立绘挡住点击不到 */
+        padding-bottom: 200px; 
+    }
 
-            .player-container {
-                width: 100%;
-                max-width: 340px;
-                padding: 25px 20px 20px;
-                box-sizing: border-box;
-            }
+    .player-container {
+        width: 100%;
+        max-width: 340px;
+        padding: 25px 20px 20px;
+        box-sizing: border-box;
+    }
 
-            .playlist-container {
-                width: 100%;
-                max-width: 340px;
-                height: 280px;
-                box-sizing: border-box;
-            }
+    .playlist-container {
+        width: 100%;
+        max-width: 340px;
+        height: 280px;
+        box-sizing: border-box;
+    }
 
-            /* 核心修改：改为 absolute 吸附于 body 底部，并大幅度提升 z-index 确保最前 */
-            .mahiru-character {
-                position: absolute;
-                width: 110px;
-                height: 175px;
-                right: 10px;
-                bottom: 0px;
-                opacity: 0.95;
-                z-index: 9999; /* 保证立绘在播放器和歌单容器的最前面 */
-            }
+    /* 【核心修改】立绘彻底固定在屏幕右下角，不随滚动条改变位置 */
+    .mahiru-character {
+        position: fixed;    /* 必须是 fixed 才能浮在最上层且不随页面滚动 */
+        width: 110px;
+        height: 175px;
+        right: 15px;        /* 距离屏幕右侧边距 */
+        bottom: 10px;       /* 距离屏幕底部边距，你可以根据喜好微调 */
+        opacity: 0.95;
+        z-index: 9999;      /* 极高层级，确保永远在播放器和歌单上面 */
+    }
 
-            /* 核心修改：提升气泡层级，使其在立绘前方正常显示 */
-            .dialogue-bubble {
-                position: absolute;
-                bottom: 155px;
-                right: 15px;
-                font-size: 0.75rem;
-                padding: 6px 12px;
-                z-index: 10000; /* 气泡必须比立绘再高一层 */
-            }
-            .dialogue-bubble::after { right: 25px; }
+    /* 禁用手机端的 Hover 位移拉伸效果，防止手触摸时导致 fixed 定位坐标乱跑 */
+    .mahiru-character:hover { 
+        transform: none !important; 
+    }
 
-            /* 手机端首次进入的互动提示遮罩 */
-            #mobileTouchUnlock {
-                position: fixed;
-                top: 0; left: 0; width: 100%; height: 100%;
-                background: rgba(90, 75, 65, 0.4);
-                backdrop-filter: blur(4px);
-                -webkit-backdrop-filter: blur(4px);
-                z-index: 99999; /* 遮罩层级必须高于一切 */
-                display: flex;
-                justify-content: center;
-                align-items: center;
-                color: #5A4B41;
-                font-weight: bold;
-            }
-            .unlock-box {
-                background: rgba(255, 255, 255, 0.95);
-                padding: 25px 30px;
-                border-radius: 20px;
-                text-align: center;
-                box-shadow: 0 10px 25px rgba(0,0,0,0.15);
-                border: 2px solid var(--mahiru-gold);
-                animation: pop 0.3s ease;
-            }
-            .unlock-box p { margin: 0 0 15px 0; font-size: 0.95rem; }
-            .unlock-box button {
-                background: #A79284; color: white; border: none; 
-                padding: 10px 24px; border-radius: 50px; font-size: 0.9rem;
-                cursor: pointer; box-shadow: 0 4px 10px rgba(0,0,0,0.1);
-            }
-            @keyframes pop { from { transform: scale(0.8); opacity: 0; } to { transform: scale(1); opacity: 1; } }
-        }
+    /* 【核心修改】气泡同样彻底固定，并紧贴立绘上方 */
+    .dialogue-bubble {
+        position: fixed;    /* 配合立绘，同样使用 fixed 定位 */
+        bottom: 185px;      /* 计算好恰好在立绘头顶上的高度 */
+        right: 15px;
+        font-size: 0.75rem;
+        padding: 6px 12px;
+        z-index: 10000;     /* 气泡层级比立绘再高一层 */
+        white-space: nowrap;
+    }
+    .dialogue-bubble::after { right: 25px; }
+
+    /* 手机端首次进入的互动提示遮罩 */
+    #mobileTouchUnlock {
+        position: fixed;
+        top: 0; left: 0; width: 100%; height: 100%;
+        background: rgba(90, 75, 65, 0.4);
+        backdrop-filter: blur(4px);
+        -webkit-backdrop-filter: blur(4px);
+        z-index: 99999;     /* 遮罩层级最高 */
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        color: #5A4B41;
+        font-weight: bold;
+    }
+    .unlock-box {
+        background: rgba(255, 255, 255, 0.95);
+        padding: 25px 30px;
+        border-radius: 20px;
+        text-align: center;
+        box-shadow: 0 10px 25px rgba(0,0,0,0.15);
+        border: 2px solid var(--mahiru-gold);
+        animation: pop 0.3s ease;
+    }
+    .unlock-box p { margin: 0 0 15px 0; font-size: 0.95rem; }
+    .unlock-box button {
+        background: #A79284; color: white; border: none; 
+        padding: 10px 24px; border-radius: 50px; font-size: 0.9rem;
+        cursor: pointer; box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+    }
+    @keyframes pop { from { transform: scale(0.8); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+}
 
         /* 在PC端隐藏手机解锁提示 */
         @media (min-width: 769px) {
