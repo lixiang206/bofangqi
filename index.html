@@ -77,10 +77,12 @@
         .progress-bar { height: 100%; width: 0%; background: linear-gradient(90deg, var(--accent-gold), var(--text-color)); border-radius: 10px; position: absolute; top: 0; left: 0; transition: width 0.1s linear; }
         .time-info { display: flex; justify-content: space-between; font-size: 0.75rem; opacity: 0.7; }
 
-        .controls { display: flex; justify-content: center; align-items: center; gap: 15px; margin-bottom: 15px; }
+        .controls { display: flex; justify-content: center; align-items: center; gap: 12px; margin-bottom: 15px; }
         .controls button { background: var(--text-color); color: #fff; border: none; cursor: pointer; transition: all 0.2s ease; box-shadow: 0 4px 10px rgba(90, 75, 65, 0.2); }
-        .btn-main { padding: 12px 28px; font-size: 1rem; border-radius: 50px; }
-        .btn-side { padding: 10px 15px; font-size: 0.9rem; border-radius: 50%; }
+        .btn-main { padding: 12px 24px; font-size: 1rem; border-radius: 50px; }
+        .btn-side { padding: 10px 14px; font-size: 0.9rem; border-radius: 50%; }
+        /* 模式按钮特殊样式，颜色稍浅以示区分 */
+        .btn-mode { padding: 10px 12px; font-size: 0.85rem; border-radius: 50%; background: #A79284 !important; }
         .controls button:hover { transform: scale(1.08); background: #7A695E; }
 
         .btn-folder { background: #A79284 !important; padding: 8px 16px; border-radius: 8px; font-size: 0.85rem; color: white; border: none; cursor: pointer; transition: background 0.2s; width: 100%; box-sizing: border-box; }
@@ -165,9 +167,10 @@
             </div>
 
             <div class="controls">
-                <button class="btn-side" id="prevBtn">⏮</button>
+                <button class="btn-side" id="prevBtn" title="上一首">⏮</button>
+                <button class="btn-mode" id="modeBtn" title="切换播放模式">🔁</button>
                 <button class="btn-main" id="playBtn">播放</button>
-                <button class="btn-side" id="nextBtn">⏭</button>
+                <button class="btn-side" id="nextBtn" title="下一首">⏭</button>
             </div>
 
             <button class="btn-folder" id="selectFolderBtn">📂 打开本地其它文件夹</button>
@@ -203,6 +206,7 @@
         const playBtn = document.getElementById('playBtn');
         const prevBtn = document.getElementById('prevBtn');
         const nextBtn = document.getElementById('nextBtn');
+        const modeBtn = document.getElementById('modeBtn');
         const selectFolderBtn = document.getElementById('selectFolderBtn');
         const disc = document.getElementById('disc');
         const tonearm = document.getElementById('tonearm');
@@ -220,10 +224,13 @@
         const onlineCountUI = document.getElementById('onlineCount');
         const localCountUI = document.getElementById('localCount');
 
-        let currentMode = 'online', onlineSongs = [], localSongs = [], currentIndex = 0;       
+        let currentMode = 'online', onlineSongs = [], localSongs = [], currentIndex = 0;        
         const mobileTouchUnlock = document.getElementById('mobileTouchUnlock');
         const unlockBtn = document.getElementById('unlockBtn');
         
+        // 播放模式变量：'loop' (列表循环/顺序播放), 'random' (随机播放), 'single' (单曲循环)
+        let playMode = 'loop'; 
+
         function unlockMobileAudio() {
             audio.play().then(() => { audio.pause(); }).catch(e => console.log('激活中...'));
             mobileTouchUnlock.style.display = 'none';
@@ -321,9 +328,73 @@
         function pauseAudio() { audio.pause(); playBtn.innerText = '播放'; disc.style.animationPlayState = 'paused'; tonearm.classList.remove('playing'); }
 
         playBtn.addEventListener('click', () => { if (audio.paused) { playAudio(); } else { pauseAudio(); } });
-        prevBtn.addEventListener('click', () => { const activeList = (currentMode === 'online') ? onlineSongs : localSongs; let idx = currentIndex - 1; if (idx < 0) idx = activeList.length - 1; loadSong(idx, true); });
-        nextBtn.addEventListener('click', () => { const activeList = (currentMode === 'online') ? onlineSongs : localSongs; let idx = currentIndex + 1; if (idx >= activeList.length) idx = 0; loadSong(idx, true); });
-        audio.addEventListener('ended', () => { const activeList = (currentMode === 'online') ? onlineSongs : localSongs; let idx = currentIndex + 1; if (idx >= activeList.length) idx = 0; loadSong(idx, true); });
+        
+        // 上一首
+        prevBtn.addEventListener('click', () => { 
+            const activeList = (currentMode === 'online') ? onlineSongs : localSongs; 
+            if (activeList.length === 0) return;
+            
+            let idx = currentIndex;
+            if (playMode === 'random') {
+                idx = Math.floor(Math.random() * activeList.length);
+            } else {
+                idx = currentIndex - 1; 
+                if (idx < 0) idx = activeList.length - 1;
+            }
+            loadSong(idx, true); 
+        });
+
+        // 下一首核心函数（手动点击下一首，或者切歌时调用）
+        function handleNextSong(isAutoEnd = false) {
+            const activeList = (currentMode === 'online') ? onlineSongs : localSongs;
+            if (activeList.length === 0) return;
+
+            // 如果是播放结束触发，并且是单曲循环模式，则直接重新播放当前歌曲
+            if (isAutoEnd && playMode === 'single') {
+                audio.currentTime = 0;
+                playAudio();
+                return;
+            }
+
+            let idx = currentIndex;
+            if (playMode === 'random') {
+                idx = Math.floor(Math.random() * activeList.length);
+                // 尽量避免连续抽到同一首歌（如果歌单大于1首的话）
+                if (activeList.length > 1 && idx === currentIndex) {
+                    idx = (idx + 1) % activeList.length;
+                }
+            } else {
+                // 顺序/列表循环模式
+                idx = currentIndex + 1;
+                if (idx >= activeList.length) idx = 0;
+            }
+            loadSong(idx, true);
+        }
+
+        nextBtn.addEventListener('click', () => { handleNextSong(false); });
+        audio.addEventListener('ended', () => { handleNextSong(true); });
+
+        // ===================================================
+        // 🔁 播放模式切换逻辑
+        // ===================================================
+        modeBtn.addEventListener('click', () => {
+            if (playMode === 'loop') {
+                playMode = 'random';
+                modeBtn.innerText = '🔀';
+                modeBtn.title = '随机播放';
+                showBubbleWithTimer("真昼提示：已切换到随机播放模式。");
+            } else if (playMode === 'random') {
+                playMode = 'single';
+                modeBtn.innerText = '🔂';
+                modeBtn.title = '单曲循环';
+                showBubbleWithTimer("真昼提示：要一直重复听这首歌吗？");
+            } else {
+                playMode = 'loop';
+                modeBtn.innerText = '🔁';
+                modeBtn.title = '列表循环';
+                showBubbleWithTimer("真昼提示：已切换到列表循环模式。");
+            }
+        });
 
         function formatTime(secs) { if (isNaN(secs)) return '00:00'; const m = Math.floor(secs / 60), s = Math.floor(secs % 60); return `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`; }
         audio.addEventListener('timeupdate', () => { if (!isNaN(audio.duration)) { progressBar.style.width = `${(audio.currentTime / audio.duration) * 100}%`; currentTimeUI.innerText = formatTime(audio.currentTime); } });
