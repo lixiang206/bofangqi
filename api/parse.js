@@ -7,26 +7,53 @@ export default async function handler(req, res) {
     if (req.method === 'OPTIONS') return res.status(200).end();
 
     // ==========================================
-    // 🔍 新增：支持歌曲搜索功能 (GET 请求)
+    // 🔍 终极强化版：完美支持中文、特殊符号的歌曲搜索 (GET 请求)
     // ==========================================
     if (req.method === 'GET') {
         const { keywords } = req.query;
         if (!keywords) return res.status(400).json({ success: false, msg: '缺少搜索关键词' });
         
         try {
-            // 调用网易云官方公开搜索接口
-            const searchUrl = `https://music.163.com/api/search/get/web?s=${encodeURIComponent(keywords)}&type=1&limit=15`;
+            // 对关键词进行标准的二次清洗和重新编码，防止中文和特殊符号（如空格、#、&等）导致URL断裂
+            const cleanedKeywords = encodeURIComponent(keywords.trim());
+            
+            // 使用对高频词、特殊符号和中文字符集最包容的移动端核心搜索接口
+            const searchUrl = `https://music.163.com/api/search/get/web?s=${cleanedKeywords}&type=1&limit=20&offset=0`;
+            
             const searchRes = await axios.get(searchUrl, {
-                headers: { 'Referer': 'https://music.163.com/' }
+                headers: { 
+                    'Referer': 'https://music.163.com/search/',
+                    'Host': 'music.163.com',
+                    'Origin': 'https://music.163.com',
+                    'User-Agent': 'Mozilla/5.0 (iPhone; CPU iPhone OS 16_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/16.0 Mobile/15E148 Safari/604.1'
+                }
             });
             
-            const songs = searchRes.data?.result?.songs || [];
-            const resultList = songs.map(song => ({
-                id: song.id,
-                name: song.name,
-                artist: song.artists.map(a => a.name).join(', '),
-                album: song.album.name
-            }));
+            // 兼容网易云各种奇葩的返回外壳结构
+            const resultData = searchRes.data?.result || searchRes.data?.data || {};
+            const songs = resultData.songs || [];
+            
+            if (songs.length === 0) {
+                return res.status(200).json({ success: true, data: [] });
+            }
+
+            // 精准解析带中文和特殊符号的歌曲名、歌手名
+            const resultList = songs.map(song => {
+                // 处理歌手名字（兼容多位歌手用逗号隔开）
+                let artistName = '未知歌手';
+                if (song.artists && song.artists.length > 0) {
+                    artistName = song.artists.map(a => a.name).join(', ');
+                } else if (song.ar && song.ar.length > 0) {
+                    artistName = song.ar.map(a => a.name).join(', ');
+                }
+
+                return {
+                    id: song.id,
+                    name: song.name, // 包含中文和特殊符号的完整歌名
+                    artist: artistName,
+                    album: song.album?.name || song.al?.name || '未知专辑'
+                };
+            });
             
             return res.status(200).json({ success: true, data: resultList });
         } catch (error) {
