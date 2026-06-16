@@ -1,6 +1,6 @@
 [
     {
-        "file": "natsumatsuri.mp3",
+        "file": "xiaji.mp3",
         "title": "夏祭り"
     },
     {
@@ -8,7 +8,10 @@
         "title": "叹云兮"
     },
     {
-        "file": "romantic_memories.mp3",
+        "file": "SpotiMate.io - Romantic Memories.mp3",
         "title": "Spotimate.io - Romantic Memories"
+    },
+    {"file": "7Wonders.mp3",
+    "title": "7Wonders"
     }
 ]
