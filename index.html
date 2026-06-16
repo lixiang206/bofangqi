@@ -95,13 +95,14 @@
 
         .playlist-container {
             background: rgba(255, 255, 255, 0.65); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
-            padding: 25px; border-radius: 28px; height: 380px; width: 280px;
+            padding: 25px; border-radius: 28px; height: 380px; width: 300px;
             box-shadow: 0 15px 35px rgba(90, 75, 65, 0.08); border: 2px solid rgba(255, 255, 255, 0.5);
             display: flex; flex-direction: column;
         }
 
-        .playlist-tabs { display: flex; gap: 10px; margin-bottom: 15px; border-bottom: 2px solid var(--mahiru-gold); padding-bottom: 8px; }
-        .tab-btn { background: none; border: none; font-size: 0.9rem; font-weight: bold; color: var(--text-color); opacity: 0.5; cursor: pointer; padding: 0 4px; transition: opacity 0.2s; }
+        .playlist-tabs { display: flex; gap: 8px; margin-bottom: 15px; border-bottom: 2px solid var(--mahiru-gold); padding-bottom: 8px; overflow-x: auto; white-space: nowrap; }
+        .playlist-tabs::-webkit-scrollbar { display: none; }
+        .tab-btn { background: none; border: none; font-size: 0.85rem; font-weight: bold; color: var(--text-color); opacity: 0.5; cursor: pointer; padding: 0 2px; transition: opacity 0.2s; flex-shrink: 0; }
         .tab-btn.active { opacity: 1; position: relative; }
         .tab-btn.active::after { content: ''; position: absolute; bottom: -10px; left: 0; width: 100%; height: 3px; background: var(--text-color); border-radius: 2px; }
 
@@ -109,9 +110,14 @@
         .track-list::-webkit-scrollbar { width: 6px; }
         .track-list::-webkit-scrollbar-thumb { background: rgba(90, 75, 65, 0.2); border-radius: 10px; }
 
-        .track-item { padding: 10px 12px; border-radius: 8px; cursor: pointer; font-size: 0.85rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; transition: all 0.2s ease; margin-bottom: 4px; }
+        .track-item { padding: 10px 12px; border-radius: 8px; cursor: pointer; font-size: 0.85rem; transition: all 0.2s ease; margin-bottom: 4px; display: flex; flex-direction: column; gap: 2px; }
         .track-item:hover { background: rgba(245, 230, 204, 0.6); }
         .track-item.active { background: var(--text-color); color: #fff; font-weight: bold; }
+        
+        /* 搜索列表专属样式 */
+        .search-title { font-weight: bold; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .search-meta { font-size: 0.75rem; opacity: 0.7; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .track-item.active .search-meta { color: #eee; }
 
         .mahiru-character { position: absolute; bottom: -20px; right: 30px; width: 220px; height: 350px; z-index: 3; cursor: pointer; transition: all 0.5s ease; background: url('img/lihui.png') no-repeat bottom center; background-size: contain; }
         .mahiru-character:hover { transform: translateY(-10px); }
@@ -120,7 +126,6 @@
         .dialogue-bubble::after { content: ''; position: absolute; bottom: -8px; right: 40px; border-width: 8px 8px 0; border-style: solid; border-color: #fff transparent; }
         .mahiru-character:hover .dialogue-bubble { opacity: 1; transform: translateY(0); }
 
-        /* 移动端特殊适配 */
         @media (max-width: 768px) {
             body { position: fixed; top: 0; left: 0; right: 0; bottom: 0; width: 100vw; height: 100vh; overflow: hidden !important; align-items: center; }
             .main-wrapper { position: absolute; top: 0; left: 0; width: 100%; height: 100%; overflow-y: scroll; -webkit-overflow-scrolling: touch; flex-direction: column; align-items: center; gap: 20px; padding: 20px 15px 180px; box-sizing: border-box; }
@@ -173,8 +178,8 @@
             <button class="btn-folder" id="selectFolderBtn">📂 打开本地其它文件夹</button>
 
             <div class="wyy-download-box">
-                <input type="text" id="wyyIdInput" class="wyy-input" placeholder="输入网易云歌曲 ID">
-                <button id="wyyDlBtn" class="wyy-btn">直接播放</button>
+                <input type="text" id="wyyIdInput" class="wyy-input" placeholder="输入歌曲名 或 歌曲ID">
+                <button id="wyyDlBtn" class="wyy-btn">直接播放/搜索</button>
             </div>
             <audio id="myAudio"></audio>
         </div>
@@ -183,6 +188,7 @@
             <div class="playlist-tabs">
                 <button class="tab-btn active" id="tabOnline">内置歌单 (<span id="onlineCount">0</span>)</button>
                 <button class="tab-btn" id="tabLocal">本地文件夹 (<span id="localCount">0</span>)</button>
+                <button class="tab-btn" id="tabSearch" style="color: #bf2424;">🔍 搜索结果</button>
             </div>
             <ul class="track-list" id="trackList">
                 <li style="color: #999; text-align: center; padding-top: 50px;">正在加载网页歌单...</li>
@@ -193,11 +199,7 @@
     <div class="mahiru-character" id="mahiruSkin"><div class="dialogue-bubble" id="bubble">今天想听什么歌呢？</div></div>
 
     <script>
-        // ===================================================
-        // ☁️ 自动识别并绑定你的独立域名（不需要手动修改网址了）
-        // ===================================================
         const VERCEL_URL = window.location.origin; 
-
         const supabaseBaseUrl = "https://dqfnxybsrbheeatzxxjg.supabase.co/storage/v1/object/public/music/";
         const audio = document.getElementById('myAudio');
         const playBtn = document.getElementById('playBtn');
@@ -217,10 +219,11 @@
         const totalTimeUI = document.getElementById('totalTime');
         const tabOnline = document.getElementById('tabOnline');
         const tabLocal = document.getElementById('tabLocal');
+        const tabSearch = document.getElementById('tabSearch');
         const onlineCountUI = document.getElementById('onlineCount');
         const localCountUI = document.getElementById('localCount');
 
-        let currentMode = 'online', onlineSongs = [], localSongs = [], currentIndex = 0;       
+        let currentMode = 'online', onlineSongs = [], localSongs = [], searchSongs = [], currentIndex = 0;       
         const mobileTouchUnlock = document.getElementById('mobileTouchUnlock');
         const unlockBtn = document.getElementById('unlockBtn');
         
@@ -260,17 +263,26 @@
 
         tabOnline.addEventListener('click', () => {
             if(currentMode === 'online') return; currentMode = 'online';
-            tabOnline.classList.add('active'); tabLocal.classList.remove('active');
+            tabOnline.classList.add('active'); tabLocal.classList.remove('active'); tabSearch.classList.remove('active');
             renderPlaylist(); if(onlineSongs.length > 0) loadSong(0, false);
         });
 
         tabLocal.addEventListener('click', () => {
             if(currentMode === 'local') return; currentMode = 'local';
-            tabLocal.classList.add('active'); tabOnline.classList.remove('active');
+            tabLocal.classList.add('active'); tabOnline.classList.remove('active'); tabSearch.classList.remove('active');
             renderPlaylist();
             if(localSongs.length > 0) { loadSong(0, false); } else {
                 trackListUI.innerHTML = `<li style="color: #999; text-align: center; padding-top: 50px;">请点击左下方按钮载入本地音乐</li>`;
                 pauseAudio();
+            }
+        });
+
+        tabSearch.addEventListener('click', () => {
+            if(currentMode === 'search') return; currentMode = 'search';
+            tabSearch.classList.add('active'); tabOnline.classList.remove('active'); tabLocal.classList.remove('active');
+            renderPlaylist();
+            if(searchSongs.length === 0) {
+                trackListUI.innerHTML = `<li style="color: #999; text-align: center; padding-top: 50px;">暂无搜索结果，请在左侧输入歌名搜索吧！</li>`;
             }
         });
 
@@ -281,19 +293,37 @@
                 for await (const entry of dirHandle.values()) { if (entry.kind === 'file' && /\.(mp3|wav|ogg|flac)$/i.test(entry.name)) localSongs.push(entry); }
                 if (localSongs.length === 0) { alert('该文件夹下没有找到音乐格式文件！'); return; }
                 localSongs.sort((a, b) => a.name.localeCompare(b.name)); localCountUI.innerText = localSongs.length;
-                currentMode = 'local'; tabLocal.classList.add('active'); tabOnline.classList.remove('active');
+                currentMode = 'local'; tabLocal.classList.add('active'); tabOnline.classList.remove('active'); tabSearch.classList.remove('active');
                 renderPlaylist(); await loadSong(0, true);
                 showBubbleWithTimer("成功读取了 " + localSongs.length + " 首本地歌曲~");
             } catch (err) { console.error(err); }
         });
 
         function renderPlaylist() {
-            trackListUI.innerHTML = ''; const activeList = (currentMode === 'online') ? onlineSongs : localSongs;
+            trackListUI.innerHTML = ''; 
+            
+            if (currentMode === 'search') {
+                if (searchSongs.length === 0) return;
+                searchSongs.forEach((item, index) => {
+                    const li = document.createElement('li'); li.className = 'track-item';
+                    li.innerHTML = `
+                        <div class="search-title">${index + 1}. ${item.name}</div>
+                        <div class="search-meta">ID: ${item.id} - ${item.artist}</div>
+                    `;
+                    li.addEventListener('click', () => { playNetEaseSong(item.id, index); });
+                    trackListUI.appendChild(li);
+                });
+                updateActiveHighlight();
+                return;
+            }
+
+            const activeList = (currentMode === 'online') ? onlineSongs : localSongs;
             if (activeList.length === 0) return;
             activeList.forEach((item, index) => {
                 const li = document.createElement('li'); li.className = 'track-item';
                 const displayName = (currentMode === 'online') ? item.name : item.name.replace(/\.[^/.]+$/, "");
-                li.innerText = `${index + 1}. ${displayName}`; li.addEventListener('click', () => { loadSong(index, true); });
+                li.innerHTML = `<div class="search-title">${index + 1}. ${displayName}</div>`; 
+                li.addEventListener('click', () => { loadSong(index, true); });
                 trackListUI.appendChild(li);
             });
             updateActiveHighlight();
@@ -318,12 +348,24 @@
         }
 
         function playAudio() { audio.play().catch(() => { pauseAudio(); }); playBtn.innerText = '暂停'; disc.style.animationPlayState = 'running'; tonearm.classList.add('playing'); }
-        function pauseAudio() { audio.pause(); playBtn.innerText = '播放'; disc.style.animationPlayState = 'paused'; tonearm.classList.remove('playing'); }
+        function pauseAudio() { audio.pause(); playBtn.innerText = '播放'; disc.style.animationPlayState = 'paused'; transform: tonearm.classList.remove('playing'); }
 
         playBtn.addEventListener('click', () => { if (audio.paused) { playAudio(); } else { pauseAudio(); } });
-        prevBtn.addEventListener('click', () => { const activeList = (currentMode === 'online') ? onlineSongs : localSongs; let idx = currentIndex - 1; if (idx < 0) idx = activeList.length - 1; loadSong(idx, true); });
-        nextBtn.addEventListener('click', () => { const activeList = (currentMode === 'online') ? onlineSongs : localSongs; let idx = currentIndex + 1; if (idx >= activeList.length) idx = 0; loadSong(idx, true); });
-        audio.addEventListener('ended', () => { const activeList = (currentMode === 'online') ? onlineSongs : localSongs; let idx = currentIndex + 1; if (idx >= activeList.length) idx = 0; loadSong(idx, true); });
+        prevBtn.addEventListener('click', () => { 
+            const activeList = (currentMode === 'online') ? onlineSongs : ((currentMode === 'local') ? localSongs : searchSongs); 
+            let idx = currentIndex - 1; if (idx < 0) idx = activeList.length - 1; 
+            if (currentMode === 'search') { playNetEaseSong(activeList[idx].id, idx); } else { loadSong(idx, true); }
+        });
+        nextBtn.addEventListener('click', () => { 
+            const activeList = (currentMode === 'online') ? onlineSongs : ((currentMode === 'local') ? localSongs : searchSongs); 
+            let idx = currentIndex + 1; if (idx >= activeList.length) idx = 0; 
+            if (currentMode === 'search') { playNetEaseSong(activeList[idx].id, idx); } else { loadSong(idx, true); }
+        });
+        audio.addEventListener('ended', () => { 
+            const activeList = (currentMode === 'online') ? onlineSongs : ((currentMode === 'local') ? localSongs : searchSongs); 
+            let idx = currentIndex + 1; if (idx >= activeList.length) idx = 0; 
+            if (currentMode === 'search') { playNetEaseSong(activeList[idx].id, idx); } else { loadSong(idx, true); }
+        });
 
         function formatTime(secs) { if (isNaN(secs)) return '00:00'; const m = Math.floor(secs / 60), s = Math.floor(secs % 60); return `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`; }
         audio.addEventListener('timeupdate', () => { if (!isNaN(audio.duration)) { progressBar.style.width = `${(audio.currentTime / audio.duration) * 100}%`; currentTimeUI.innerText = formatTime(audio.currentTime); } });
@@ -335,18 +377,50 @@
         mahiruSkin.addEventListener('click', () => { const q = ["别突然戳我呀...", "听音乐的时候要保持好心情哦。", "这首歌，我也很喜欢呢。"]; showBubbleWithTimer(q[Math.floor(Math.random() * q.length)]); });
 
         // ===================================================
-        // ☁️ 网易云云函数直接播放的核心逻辑
+        // ☁️ 核心逻辑：智能判断输入的是 ID 还是 歌名
         // ===================================================
         const wyyIdInput = document.getElementById('wyyIdInput');
         const wyyDlBtn = document.getElementById('wyyDlBtn');
 
         wyyDlBtn.addEventListener('click', async () => {
-            const songId = wyyIdInput.value.trim();
-            if (!songId || !/^\d+$/.test(songId)) { showBubbleWithTimer("请输入纯数字的歌曲 ID 呢。"); return; }
+            const inputVal = wyyIdInput.value.trim();
+            if (!inputVal) { showBubbleWithTimer("请输入纯数字的歌曲 ID 或歌曲名称呢。"); return; }
 
-            showBubbleWithTimer("正在为您向云端请求解析，请稍候...");
-            wyyDlBtn.innerText = "解析中..."; wyyDlBtn.disabled = true;
+            // 如果输入的是全数字，直接走解析播放流程
+            if (/^\d+$/.test(inputVal)) {
+                playNetEaseSong(inputVal, -1);
+                wyyIdInput.value = '';
+                return;
+            }
 
+            // 如果输入的是文字，走歌曲搜索流程
+            showBubbleWithTimer(`正在为您在云端搜索《${inputVal}》...`);
+            wyyDlBtn.innerText = "搜索中..."; wyyDlBtn.disabled = true;
+
+            try {
+                const response = await fetch(`${VERCEL_URL}/api/parse?keywords=${encodeURIComponent(inputVal)}`);
+                if (!response.ok) throw new Error("搜索失败");
+                const resData = await response.json();
+
+                if (resData.success && resData.data.length > 0) {
+                    searchSongs = resData.data;
+                    currentMode = 'search';
+                    tabSearch.classList.add('active'); tabOnline.classList.remove('active'); tabLocal.classList.remove('active');
+                    renderPlaylist();
+                    showBubbleWithTimer(`❀ 已为您搜索到 ${searchSongs.length} 首匹配歌曲 ❀`);
+                } else {
+                    showBubbleWithTimer("没有找到相关的歌曲，换个词试试？");
+                }
+            } catch (err) {
+                showBubbleWithTimer("连接搜索服务失败，请检查后端网络");
+            } finally {
+                wyyDlBtn.innerText = "直接播放/搜索"; wyyDlBtn.disabled = false;
+            }
+        });
+
+        // 核心解析播放函数
+        async function playNetEaseSong(songId, indexInSearch = -1) {
+            showBubbleWithTimer("正在拉取高品质直链，请稍候...");
             try {
                 const response = await fetch(`${VERCEL_URL}/api/parse`, {
                     method: 'POST',
@@ -358,21 +432,22 @@
                 const data = await response.json();
                 
                 if (data.success) {
-                    showBubbleWithTimer(`❀ 成功解析！正在为您播放《${data.songName}》❀`);
+                    showBubbleWithTimer(`❀ 正在为您播放《${data.songName}》❀`);
                     audio.src = data.audioUrl;
                     songTitle.innerText = data.songName;
-                    songArtist.innerText = data.artistName || "网易云在线点播";
+                    songArtist.innerText = data.artistName || "网易云点播";
+                    if (indexInSearch !== -1) {
+                        currentIndex = indexInSearch;
+                        updateActiveHighlight();
+                    }
                     playAudio();
-                    wyyIdInput.value = '';
                 } else {
                     showBubbleWithTimer("点播失败：" + data.msg);
                 }
             } catch (err) {
                 showBubbleWithTimer("无法连接到云端服务，请确认 Vercel 后端部署状态？");
-            } finally {
-                wyyDlBtn.innerText = "直接播放"; wyyDlBtn.disabled = false;
             }
-        });
+        }
 
         window.addEventListener('DOMContentLoaded', initOnlinePlaylist);
     </script>
