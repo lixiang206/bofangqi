@@ -225,7 +225,54 @@
         }
         .btn-folder:hover { background: #8B7E74; }
 
-        /* ================= 右侧动态歌单面板 ================= */
+        /* ==================== 新增：网易云下载区域样式 ==================== */
+        .wyy-download-box {
+            margin-top: 15px;
+            border-top: 1px dashed var(--accent-gold);
+            padding-top: 15px;
+            display: flex;
+            gap: 8px;
+            justify-content: center;
+            align-items: center;
+        }
+        .wyy-input {
+            width: 60%;
+            padding: 6px 12px;
+            border: 1px solid var(--accent-gold);
+            border-radius: 20px;
+            outline: none;
+            font-size: 0.8rem;
+            color: var(--text-color);
+            background: rgba(255, 255, 255, 0.6);
+            transition: all 0.2s;
+        }
+        .wyy-input:focus {
+            background: #fff;
+            border-color: var(--text-color);
+        }
+        .wyy-btn {
+            background: var(--text-color);
+            color: white;
+            border: none;
+            padding: 6px 14px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            cursor: pointer;
+            white-space: nowrap;
+            box-shadow: 0 2px 6px rgba(90, 75, 65, 0.15);
+            transition: all 0.2s;
+        }
+        .wyy-btn:hover {
+            background: #7A695E;
+            transform: scale(1.05);
+        }
+        .wyy-btn:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        /* ================= Right Panel / Playlist Panel ================= */
         .playlist-container {
             background: rgba(255, 255, 255, 0.65);
             backdrop-filter: blur(12px);
@@ -500,6 +547,12 @@
             </div>
 
             <button class="btn-folder" id="selectFolderBtn">📂 打开本地其它文件夹</button>
+
+            <div class="wyy-download-box">
+                <input type="text" id="wyyIdInput" class="wyy-input" placeholder="输入网易云歌曲 ID">
+                <button id="wyyDlBtn" class="wyy-btn">点播下载</button>
+            </div>
+
             <audio id="myAudio"></audio>
         </div>
 
@@ -846,18 +899,65 @@
             if (bubbleTimer) clearTimeout(bubbleTimer);
             bubble.innerText = text;
             
-            if (window.innerWidth <= 768) {
-                bubble.style.opacity = '1';
-                bubbleTimer = setTimeout(() => {
-                    bubble.style.opacity = '0';
-                }, 4000);
-            }
+            // 无论是移动端还是PC端下载交互，都主动显示气泡
+            bubble.style.opacity = '1';
+            bubbleTimer = setTimeout(() => {
+                bubble.style.opacity = '0';
+            }, 4000);
         }
 
         mahiruSkin.addEventListener('click', () => {
             const quotes = ["别突然戳我呀...", "听音乐的时候要保持好心情哦。", "需要我为你泡杯茶吗？", "这首歌，我也很喜欢呢。"];
             const selectedText = quotes[Math.floor(Math.random() * quotes.length)];
             showBubbleWithTimer(selectedText);
+        });
+
+        // ==================== 新增：网易云下载前端 JS 交互逻辑 ====================
+        const wyyIdInput = document.getElementById('wyyIdInput');
+        const wyyDlBtn = document.getElementById('wyyDlBtn');
+
+        wyyDlBtn.addEventListener('click', async () => {
+            const songId = wyyIdInput.value.trim();
+            if (!songId) {
+                showBubbleWithTimer("还没有输入歌曲 ID 喔？");
+                return;
+            }
+
+            // 检查纯数字格式
+            if(!/^\d+$/.test(songId)){
+                showBubbleWithTimer("请输入正确的纯数字歌曲 ID 呢。");
+                return;
+            }
+
+            showBubbleWithTimer("正在努力搬运歌曲中，请稍候...");
+            wyyDlBtn.innerText = "下载中...";
+            wyyDlBtn.disabled = true;
+
+            try {
+                // 向本地Node后台发送下载指令
+                const response = await fetch('http://localhost:3000/api/download', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        songId: songId,
+                        songName: "网易云_" + songId // 默认格式名，后端处理
+                    })
+                });
+
+                const data = await response.json();
+                if (data.success) {
+                    showBubbleWithTimer("❀ 下载完成！再次选择文件夹读取即可 ❀");
+                    wyyIdInput.value = '';
+                } else {
+                    showBubbleWithTimer("下载遇到了问题：" + data.msg);
+                }
+            } catch (err) {
+                console.error(err);
+                showBubbleWithTimer("无法连接到本地 Node 服务，后台启动了吗？");
+            } finally {
+                wyyDlBtn.innerText = "点播下载";
+                wyyDlBtn.disabled = false;
+            }
         });
 
         window.addEventListener('DOMContentLoaded', initOnlinePlaylist);
