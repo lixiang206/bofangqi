@@ -1,6 +1,18 @@
 [
-  "xiaji.mp3",
-  "tanyunxi.mp3",
-  "SpotiMate.io - Romantic Memories.mp3",
-  "7Wonders.mp3"
+    {
+        "file": "natsumatsuri.mp3",
+        "title": "夏祭り"
+    },
+    {
+        "file": "tanyunxi.mp3",
+        "title": "叹云兮"
+    },
+    {
+        "file": "romantic_memories.mp3",
+        "title": "Spotimate.io - Romantic Memories"
+    },
+    {
+        "file": "7Wonders.mp3",
+        "title": "7Wonders"
+    }
 ]
