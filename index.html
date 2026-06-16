@@ -30,30 +30,32 @@
             position: relative;
         }
 
-        /* 页面装饰：背景粒子 */
-        .decorations {
-            position: absolute;
-            width: 100%;
-            height: 100%;
-            top: 0;
-            left: 0;
-            pointer-events: none;
-            z-index: 1;
-        }
+        /* ===================================================
+   花瓣全局置顶样式（PC端与移动端通用，绝对不被遮挡）
+   =================================================== */
+.decorations {
+    position: fixed;          /* 改为 fixed 锁死视口，防止 PC/手机端滚动时花瓣错位 */
+    width: 100vw;
+    height: 100vh;
+    top: 0;
+    left: 0;
+    pointer-events: none;     /* 极其重要：允许鼠标和手指穿透花瓣，不影响网页任何按钮的点击 */
+    z-index: 10000000 !important; /* 赋予宇宙级最高的层级，确保凌驾于播放器、歌单、甚至解锁遮罩层之上 */
+}
 
-        .petal {
-            position: absolute;
-            background: rgba(245, 230, 204, 0.6);
-            border-radius: 50% 0 50% 50%;
-            animation: float 10s infinite linear;
-        }
+.petal {
+    position: absolute;
+    background: rgba(245, 230, 204, 0.75); /* 稍微提升一点透明度，让它在前后端都更明显 */
+    border-radius: 50% 0 50% 50%;
+    animation: float 10s infinite linear;
+}
 
-        @keyframes float {
-            0% { transform: translateY(-10px) translateX(0) rotate(0deg); opacity: 0; }
-            10% { opacity: 1; }
-            90% { opacity: 1; }
-            100% { transform: translateY(105vh) translateX(100px) rotate(360deg); opacity: 0; }
-        }
+@keyframes float {
+    0% { transform: translateY(-20px) translateX(0) rotate(0deg); opacity: 0; }
+    10% { opacity: 1; }
+    90% { opacity: 1; }
+    100% { transform: translateY(105vh) translateX(120px) rotate(360deg); opacity: 0; }
+}
 
         /* 核心布局 */
         .main-wrapper {
