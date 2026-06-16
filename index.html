@@ -334,7 +334,7 @@
         .mahiru-character:hover .dialogue-bubble { opacity: 1; transform: translateY(0); }
 
         /* ===================================================
-           2. 纯移动端手机适配（进行了轻量增强，包含播放通道解锁提示）
+           2. 纯移动端手机适配（针对立绘固定和层级进行了核心优化）
            =================================================== */
         @media (max-width: 768px) {
             body {
@@ -342,6 +342,7 @@
                 overflow-y: auto;
                 height: auto;
                 min-height: 100vh;
+                position: relative; /* 确立绝对定位基准 */
                 -webkit-overflow-scrolling: touch;
             }
 
@@ -352,7 +353,7 @@
                 padding: 20px 15px;
                 width: 100%;
                 box-sizing: border-box;
-                padding-bottom: 160px;
+                padding-bottom: 180px; /* 留出空间给底部绝对定位的立绘 */
             }
 
             .player-container {
@@ -369,23 +370,25 @@
                 box-sizing: border-box;
             }
 
+            /* 核心修改：改为 absolute 吸附于 body 底部，并大幅度提升 z-index 确保最前 */
             .mahiru-character {
-                position: fixed;
+                position: absolute;
                 width: 110px;
                 height: 175px;
                 right: 10px;
                 bottom: 0px;
                 opacity: 0.95;
-                z-index: 99;
+                z-index: 9999; /* 保证立绘在播放器和歌单容器的最前面 */
             }
 
+            /* 核心修改：提升气泡层级，使其在立绘前方正常显示 */
             .dialogue-bubble {
-                position: fixed;
+                position: absolute;
                 bottom: 155px;
                 right: 15px;
                 font-size: 0.75rem;
                 padding: 6px 12px;
-                z-index: 100;
+                z-index: 10000; /* 气泡必须比立绘再高一层 */
             }
             .dialogue-bubble::after { right: 25px; }
 
@@ -396,7 +399,7 @@
                 background: rgba(90, 75, 65, 0.4);
                 backdrop-filter: blur(4px);
                 -webkit-backdrop-filter: blur(4px);
-                z-index: 9999;
+                z-index: 99999; /* 遮罩层级必须高于一切 */
                 display: flex;
                 justify-content: center;
                 align-items: center;
@@ -521,9 +524,8 @@
         const unlockBtn = document.getElementById('unlockBtn');
         
         function unlockMobileAudio() {
-            // 给一串静音或极其微弱的控制，让系统认为用户已经在这个页面授权过音频播放
             audio.play().then(() => {
-                audio.pause(); // 马上暂停，不影响后续正常加载
+                audio.pause(); 
             }).catch(e => console.log('音频通道激活中...'));
             
             mobileTouchUnlock.style.display = 'none';
@@ -539,7 +541,6 @@
                 
                 const fileNames = await response.json();
                 
-                // 将歌名转换成播放器需要的格式
                 onlineSongs = fileNames.map(name => {
                     return {
                         name: name,
@@ -708,7 +709,6 @@
         }
 
         function playAudio() {
-            // 移动端安全策略捕获处理
             audio.play().catch(err => {
                 console.log("移动端音频拦截，等待进一步交互", err);
                 playBtn.innerText = '播放';
