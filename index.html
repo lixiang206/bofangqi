@@ -45,13 +45,11 @@
 
         .petal {
             position: absolute;
-            /* 改变材质：使用高显度粉金色彩，并且几乎不透明，解决亮色背景下不明显的问题 */
             background: linear-gradient(135deg, #FFC0CB, #F5E6CC); 
             opacity: 0.92 !important;
             border-radius: 50% 0 50% 50%;
             animation: float linear infinite; 
             transform-origin: center;
-            /* 增加微弱阴影，使其在白底面板前拥有更强的立体感和可视度 */
             box-shadow: 1px 1px 3px rgba(90, 75, 65, 0.15);
         }
 
@@ -67,7 +65,6 @@
                 opacity: 0.92; 
             }
             100% { 
-                /* 稍微拉大摆动幅度和旋转，让 PC 端轨迹更美观 */
                 transform: translateY(105vh) translateX(180px) rotate(450deg) scale(var(--petal-scale, 1)); 
                 opacity: 0; 
             }
@@ -225,7 +222,7 @@
         }
         .btn-folder:hover { background: #8B7E74; }
 
-        /* ==================== 新增：网易云下载区域样式 ==================== */
+        /* 网易云下载区域样式 */
         .wyy-download-box {
             margin-top: 15px;
             border-top: 1px dashed var(--accent-gold);
@@ -572,9 +569,6 @@
     </div>
 
     <script>
-        // ===================================================
-        // 【已自动配置】Supabase 存储桶公共资源基准路径
-        // ===================================================
         const supabaseBaseUrl = "https://dqfnxybsrbheeatzxxjg.supabase.co/storage/v1/object/public/music/";
 
         const audio = document.getElementById('myAudio');
@@ -619,7 +613,6 @@
         unlockBtn.addEventListener('click', unlockMobileAudio);
         mobileTouchUnlock.addEventListener('click', unlockMobileAudio);
 
-        // 获取并解析全新的 list.json 对象结构
         async function initOnlinePlaylist() {
             try {
                 const response = await fetch('./music/list.json');
@@ -650,47 +643,28 @@
             }
         }
 
-        // 超高密度且错落有致的随机飘花生成器（PC端极为鲜明）
         function createDecorations() {
             const container = document.getElementById('decorations');
             if (!container) return;
-            
             container.innerHTML = ''; 
-            
-            // 【密度加码】数量控制在 55 片，形成持续、连贯的唯美花雨
             const count = 55; 
-            
             for (let i = 0; i < count; i++) {
                 const petal = document.createElement('div');
                 petal.className = 'petal';
-                
-                // 1. 随机横向初始位置
                 petal.style.left = Math.random() * 100 + 'vw';
-                
-                // 2. 随机初始高度，错开落下时间
                 petal.style.top = Math.random() * -60 + 'px';
-                
-                // 3. 随机大小：大片范围在 7px 到 15px 之间，非常明显
                 const size = Math.random() * 8 + 7;
                 petal.style.width = size + 'px';
                 petal.style.height = size + 'px';
-                
-                // 4. 随机动画延迟：最大拓展到15秒，保证断档完全消失
                 petal.style.animationDelay = Math.random() * 15 + 's';
-                
-                // 5. 随机速度范围调整
                 petal.style.animationDuration = Math.random() * 8 + 7 + 's';
-                
-                // 6. 随机微调缩放比例
                 const scale = (Math.random() * 0.4 + 0.9).toFixed(2);
                 petal.style.setProperty('--petal-scale', scale);
-                
                 container.appendChild(petal);
             }
         }
         createDecorations();
 
-        // 选项卡切换
         tabOnline.addEventListener('click', () => {
             if(currentMode === 'online') return;
             currentMode = 'online';
@@ -720,7 +694,6 @@
             }
         });
 
-        // 本地文件夹模式
         selectFolderBtn.addEventListener('click', async () => {
             try {
                 if (!window.showDirectoryPicker) {
@@ -729,39 +702,31 @@
                 }
                 const dirHandle = await window.showDirectoryPicker();
                 localSongs = [];
-
                 for await (const entry of dirHandle.values()) {
                     if (entry.kind === 'file' && /\.(mp3|wav|ogg|flac)$/i.test(entry.name)) {
                         localSongs.push(entry); 
                     }
                 }
-
                 if (localSongs.length === 0) {
                     alert('该文件夹下没有找到音乐格式文件！');
                     return;
                 }
-
                 localSongs.sort((a, b) => a.name.localeCompare(b.name));
                 localCountUI.innerText = localSongs.length;
-
                 currentMode = 'local';
                 tabLocal.classList.add('active');
                 tabOnline.classList.remove('active');
-                
                 renderPlaylist();
                 await loadSong(0, true);
                 showBubbleWithTimer("成功读取了 " + localSongs.length + " 首本地歌曲~");
-
             } catch (err) {
                 console.error('用户取消或读取失败:', err);
             }
         });
 
-        // 渲染歌单
         function renderPlaylist() {
             trackListUI.innerHTML = '';
             const activeList = (currentMode === 'online') ? onlineSongs : localSongs;
-
             if (activeList.length === 0 && currentMode === 'local') {
                 trackListUI.innerHTML = `<li style="color: #999; text-align: center; padding-top: 50px;">暂无本地歌曲</li>`;
                 return;
@@ -770,16 +735,12 @@
                 trackListUI.innerHTML = `<li style="color: #999; text-align: center; padding-top: 50px;">网页歌单内没有歌曲</li>`;
                 return;
             }
-
             activeList.forEach((item, index) => {
                 const li = document.createElement('li');
                 li.className = 'track-item';
                 const displayName = (currentMode === 'online') ? item.name : item.name.replace(/\.[^/.]+$/, "");
                 li.innerText = `${index + 1}. ${displayName}`;
-                
-                li.addEventListener('click', () => {
-                    loadSong(index, true);
-                });
+                li.addEventListener('click', () => { loadSong(index, true); });
                 trackListUI.appendChild(li);
             });
             updateActiveHighlight();
@@ -791,13 +752,10 @@
             if(items[currentIndex]) items[items.length > currentIndex ? currentIndex : 0].classList.add('active');
         }
 
-        // 歌曲载入逻辑
         async function loadSong(index, autoPlay = false) {
             const activeList = (currentMode === 'online') ? onlineSongs : localSongs;
             if (activeList.length === 0) return;
-            
             currentIndex = index;
-            
             if (currentMode === 'online') {
                 const song = activeList[currentIndex];
                 audio.src = song.url;
@@ -810,17 +768,15 @@
                 songTitle.innerText = file.name.replace(/\.[^/.]+$/, "");
                 songArtist.innerText = "本地音乐";
             }
-
             updateActiveHighlight();
             progressBar.style.width = '0%';
             currentTimeUI.innerText = '00:00';
-
             if (autoPlay) { playAudio(); } else { pauseAudio(); }
         }
 
         function playAudio() {
             audio.play().catch(err => {
-                console.log("移动端音频拦截，等待进一步交互", err);
+                console.log("移动端音频拦截", err);
                 playBtn.innerText = '播放';
                 disc.style.animationPlayState = 'paused';
                 tonearm.classList.remove('playing');
@@ -898,12 +854,8 @@
         function showBubbleWithTimer(text) {
             if (bubbleTimer) clearTimeout(bubbleTimer);
             bubble.innerText = text;
-            
-            // 无论是移动端还是PC端下载交互，都主动显示气泡
             bubble.style.opacity = '1';
-            bubbleTimer = setTimeout(() => {
-                bubble.style.opacity = '0';
-            }, 4000);
+            bubbleTimer = setTimeout(() => { bubble.style.opacity = '0'; }, 4000);
         }
 
         mahiruSkin.addEventListener('click', () => {
@@ -912,7 +864,9 @@
             showBubbleWithTimer(selectedText);
         });
 
-        // ==================== 新增：网易云下载前端 JS 交互逻辑 ====================
+        // ===================================================
+        // 【双端兼容智能分流】网易云下载前端 JS 核心逻辑
+        // ===================================================
         const wyyIdInput = document.getElementById('wyyIdInput');
         const wyyDlBtn = document.getElementById('wyyDlBtn');
 
@@ -923,34 +877,58 @@
                 return;
             }
 
-            // 检查纯数字格式
             if(!/^\d+$/.test(songId)){
                 showBubbleWithTimer("请输入正确的纯数字歌曲 ID 呢。");
                 return;
             }
+
+            // 1. 自动识别客户端设备类型
+            const isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+            const clientType = isMobile ? 'phone' : 'pc';
 
             showBubbleWithTimer("正在努力搬运歌曲中，请稍候...");
             wyyDlBtn.innerText = "下载中...";
             wyyDlBtn.disabled = true;
 
             try {
-                // 向本地Node后台发送下载指令
-                const response = await fetch('http://localhost:3000/api/download', {
+                // 【⚠️关键配置】请将 localhost 替换为你电脑在局域网中的真实 IP（例如 192.168.1.5）
+                const BACKEND_IP = "localhost"; 
+
+                // 向本地Node后台发送带有 from 客户端属性的下载指令
+                const response = await fetch('http://192.168.31.88:3000/api/download', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
                         songId: songId,
-                        songName: "网易云_" + songId // 默认格式名，后端处理
+                        from: clientType 
                     })
                 });
 
-                const data = await response.json();
-                if (data.success) {
-                    showBubbleWithTimer("❀ 下载完成！再次选择文件夹读取即可 ❀");
-                    wyyIdInput.value = '';
+                if (!response.ok) throw new Error("服务器接口异常");
+
+                // 2. 根据不同端执行独立的动作链
+                if (clientType === 'phone') {
+                    // 【手机端逻辑】接收推回的二进制流并触发浏览器默认的真实下载
+                    const blob = await response.blob();
+                    const url = window.URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = ""; // 浏览器会自动选用后端传来的 content-disposition 文件名
+                    document.body.appendChild(a);
+                    a.click();
+                    a.remove();
+                    window.URL.revokeObjectURL(url);
+                    showBubbleWithTimer("❀ 手机端下载成功！已加入本地文件 ❀");
                 } else {
-                    showBubbleWithTimer("下载遇到了问题：" + data.msg);
+                    // 【电脑端逻辑】维持原始体验，读取 JSON 回执
+                    const data = await response.json();
+                    if (data.success) {
+                        showBubbleWithTimer("❀ 下载完成！再次选择文件夹读取即可 ❀");
+                    } else {
+                        showBubbleWithTimer("下载遇到了问题：" + data.msg);
+                    }
                 }
+                wyyIdInput.value = '';
             } catch (err) {
                 console.error(err);
                 showBubbleWithTimer("无法连接到本地 Node 服务，后台启动了吗？");
