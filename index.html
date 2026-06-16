@@ -6,7 +6,7 @@
     <title>椎名真昼の治愈音乐盒</title>
     <style>
         /* ===================================================
-           1. 电脑端原始样式（完全保留，未做任何改变）
+           1. 电脑端原始样式（完全保留）
            =================================================== */
         :root {
             --mahiru-gold: #F5E6CC;      
@@ -334,7 +334,7 @@
         .mahiru-character:hover .dialogue-bubble { opacity: 1; transform: translateY(0); }
 
         /* ===================================================
-           2. 纯移动端手机适配（稳定隔离无偏移版）
+           2. 纯移动端手机适配（稳定隔离无偏移版 + 立绘置顶悬浮）
            =================================================== */
         @media (max-width: 768px) {
             body {
@@ -377,15 +377,17 @@
                 flex-shrink: 0;
             }
 
+            /* 移动端固定右下角悬浮、提至最顶层样式 */
             .mahiru-character {
-                position: fixed;    
+                position: fixed !important;    
                 width: 110px;
                 height: 175px;
                 right: 15px;        
                 bottom: 10px;       
                 opacity: 0.95;
-                z-index: 9999;      
+                z-index: 999999 !important;   
                 background-position: bottom center;
+                pointer-events: auto;          
             }
 
             .mahiru-character:hover { 
@@ -393,14 +395,15 @@
             }
 
             .dialogue-bubble {
-                position: fixed;    
+                position: fixed !important;    
                 bottom: 185px;      
                 right: 15px;
                 font-size: 0.75rem;
                 padding: 6px 12px;
-                z-index: 10000;     
+                z-index: 1000000 !important;  
                 white-space: nowrap;
-                transform: translateY(0); 
+                transform: translateY(0) !important; 
+                pointer-events: none;
             }
             .dialogue-bubble::after { right: 25px; }
 
@@ -546,19 +549,18 @@
         unlockBtn.addEventListener('click', unlockMobileAudio);
         mobileTouchUnlock.addEventListener('click', unlockMobileAudio);
 
-        // 从 music 文件夹内抓取 list.json 的配置文件（仍然留在你的 Vercel 项目里）
+        // 获取并解析全新的 list.json 对象结构
         async function initOnlinePlaylist() {
             try {
                 const response = await fetch('./music/list.json');
                 if (!response.ok) throw new Error('无法读取 list.json');
                 
-                const fileNames = await response.json();
+                const songsData = await response.json();
                 
-                onlineSongs = fileNames.map(name => {
+                onlineSongs = songsData.map(song => {
                     return {
-                        name: name,
-                        // 这里将原相对路径更改为 Supabase CDN 的绝对路径
-                        url: supabaseBaseUrl + encodeURIComponent(name)
+                        name: song.title, // 网页显示的中文名
+                        url: supabaseBaseUrl + encodeURIComponent(song.file) // 真实的英文存储文件名
                     };
                 });
                 
@@ -572,7 +574,7 @@
                 }
             } catch (err) {
                 console.error('网页歌单加载失败:', err);
-                trackListUI.innerHTML = `<li style="color: #ff7875; text-align: center; padding-top: 40px;">歌单初始化失败<br><small style="color:#aaa;">请确保含有 music/list.json</small></li>`;
+                trackListUI.innerHTML = `<li style="color: #ff7875; text-align: center; padding-top: 40px;">歌单初始化失败<br><small style="color:#aaa;">请确保含有正确的 music/list.json 格式</small></li>`;
                 songTitle.innerText = "载入失败";
                 songArtist.innerText = "请检查配置文件";
             }
@@ -664,6 +666,7 @@
             }
         });
 
+        // 渲染歌单：线上直接显示定义的 title，本地保留去除后缀逻辑
         function renderPlaylist() {
             trackListUI.innerHTML = '';
             const activeList = (currentMode === 'online') ? onlineSongs : localSongs;
@@ -680,7 +683,8 @@
             activeList.forEach((item, index) => {
                 const li = document.createElement('li');
                 li.className = 'track-item';
-                li.innerText = `${index + 1}. ${item.name.replace(/\.[^/.]+$/, "")}`;
+                const displayName = (currentMode === 'online') ? item.name : item.name.replace(/\.[^/.]+$/, "");
+                li.innerText = `${index + 1}. ${displayName}`;
                 
                 li.addEventListener('click', () => {
                     loadSong(index, true);
@@ -693,9 +697,10 @@
         function updateActiveHighlight() {
             const items = trackListUI.querySelectorAll('.track-item');
             items.forEach(item => item.classList.remove('active'));
-            if(items[currentIndex]) items[currentIndex].classList.add('active');
+            if(items[currentIndex]) items[items.length > currentIndex ? currentIndex : 0].classList.add('active');
         }
 
+        // 歌曲载入逻辑
         async function loadSong(index, autoPlay = false) {
             const activeList = (currentMode === 'online') ? onlineSongs : localSongs;
             if (activeList.length === 0) return;
@@ -705,7 +710,7 @@
             if (currentMode === 'online') {
                 const song = activeList[currentIndex];
                 audio.src = song.url;
-                songTitle.innerText = song.name.replace(/\.[^/.]+$/, "");
+                songTitle.innerText = song.name;
                 songArtist.innerText = "网页内置歌单";
             } else {
                 const fileHandle = activeList[currentIndex];
