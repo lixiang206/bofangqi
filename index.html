@@ -547,7 +547,7 @@
 
             <div class="wyy-download-box">
                 <input type="text" id="wyyIdInput" class="wyy-input" placeholder="输入网易云歌曲 ID">
-                <button id="wyyDlBtn" class="wyy-btn">点播下载</button>
+                <button id="wyyDlBtn" class="wyy-btn">直接播放</button>
             </div>
 
             <audio id="myAudio"></audio>
@@ -865,7 +865,7 @@
         });
 
         // ===================================================
-        // 【双端兼容智能分流】网易云下载前端 JS 核心逻辑
+        // 【核心修改】免下载！网易云在线直接播放逻辑
         // ===================================================
         const wyyIdInput = document.getElementById('wyyIdInput');
         const wyyDlBtn = document.getElementById('wyyDlBtn');
@@ -882,58 +882,48 @@
                 return;
             }
 
-            // 1. 自动识别客户端设备类型
-            const isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
-            const clientType = isMobile ? 'phone' : 'pc';
-
-            showBubbleWithTimer("正在努力搬运歌曲中，请稍候...");
-            wyyDlBtn.innerText = "下载中...";
+            showBubbleWithTimer("正在为您跨时空解析歌曲，请稍候...");
+            wyyDlBtn.innerText = "解析中...";
             wyyDlBtn.disabled = true;
 
             try {
-                // 【⚠️关键配置】请将 localhost 替换为你电脑在局域网中的真实 IP（例如 192.168.1.5）
-                const BACKEND_IP = "localhost"; 
+                // 已为你绑定电脑的局域网 IP
+                const BACKEND_IP = "192.168.31.88"; 
 
-                // 向本地Node后台发送带有 from 客户端属性的下载指令
-                const response = await fetch('http://192.168.31.88:3000/api/download', {
+                // 向 Node 后端发起解析直链的请求
+                const response = await fetch(`http://${BACKEND_IP}:3000/api/parse`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
-                        songId: songId,
-                        from: clientType 
+                        songId: songId
                     })
                 });
 
                 if (!response.ok) throw new Error("服务器接口异常");
 
-                // 2. 根据不同端执行独立的动作链
-                if (clientType === 'phone') {
-                    // 【手机端逻辑】接收推回的二进制流并触发浏览器默认的真实下载
-                    const blob = await response.blob();
-                    const url = window.URL.createObjectURL(blob);
-                    const a = document.createElement('a');
-                    a.href = url;
-                    a.download = ""; // 浏览器会自动选用后端传来的 content-disposition 文件名
-                    document.body.appendChild(a);
-                    a.click();
-                    a.remove();
-                    window.URL.revokeObjectURL(url);
-                    showBubbleWithTimer("❀ 手机端下载成功！已加入本地文件 ❀");
+                const data = await response.json();
+                
+                if (data.success) {
+                    showBubbleWithTimer(`❀ 成功解析！正在为您播放《${data.songName}》❀`);
+
+                    // 将解析到的网易云直链直接赋给音频标签
+                    audio.src = data.audioUrl;
+                    songTitle.innerText = data.songName;
+                    songArtist.innerText = data.artistName || "网易云在线点播";
+                    
+                    // 触发播放器开始播放
+                    playAudio();
+                    
+                    // 清空文本框
+                    wyyIdInput.value = '';
                 } else {
-                    // 【电脑端逻辑】维持原始体验，读取 JSON 回执
-                    const data = await response.json();
-                    if (data.success) {
-                        showBubbleWithTimer("❀ 下载完成！再次选择文件夹读取即可 ❀");
-                    } else {
-                        showBubbleWithTimer("下载遇到了问题：" + data.msg);
-                    }
+                    showBubbleWithTimer("点播失败：" + data.msg);
                 }
-                wyyIdInput.value = '';
             } catch (err) {
                 console.error(err);
                 showBubbleWithTimer("无法连接到本地 Node 服务，后台启动了吗？");
             } finally {
-                wyyDlBtn.innerText = "点播下载";
+                wyyDlBtn.innerText = "直接播放";
                 wyyDlBtn.disabled = false;
             }
         });
