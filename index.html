@@ -31,31 +31,43 @@
         }
 
         /* ===================================================
-   花瓣全局置顶样式（PC端与移动端通用，绝对不被遮挡）
-   =================================================== */
-.decorations {
-    position: fixed;          /* 改为 fixed 锁死视口，防止 PC/手机端滚动时花瓣错位 */
-    width: 100vw;
-    height: 100vh;
-    top: 0;
-    left: 0;
-    pointer-events: none;     /* 极其重要：允许鼠标和手指穿透花瓣，不影响网页任何按钮的点击 */
-    z-index: 10000000 !important; /* 赋予宇宙级最高的层级，确保凌驾于播放器、歌单、甚至解锁遮罩层之上 */
-}
+           花瓣全局置顶样式（PC端与移动端通用，绝对不被遮挡）
+           =================================================== */
+        .decorations {
+            position: fixed;          /* 改为 fixed 锁死视口，防止滚动时错位 */
+            width: 100vw;
+            height: 100vh;
+            top: 0;
+            left: 0;
+            pointer-events: none;     /* 允许鼠标穿透，不影响网页任何按钮的点击 */
+            z-index: 10000000 !important; /* 最高的层级，确保凌驾于所有面板和遮罩之上 */
+        }
 
-.petal {
-    position: absolute;
-    background: rgba(245, 230, 204, 0.75); /* 稍微提升一点透明度，让它在前后端都更明显 */
-    border-radius: 50% 0 50% 50%;
-    animation: float 10s infinite linear;
-}
+        .petal {
+            position: absolute;
+            background: rgba(245, 230, 204, 0.8); /* 稍微加深颜色，让它在白色背景下更显眼 */
+            border-radius: 50% 0 50% 50%;
+            animation: float linear infinite; 
+            transform-origin: center;
+        }
 
-@keyframes float {
-    0% { transform: translateY(-20px) translateX(0) rotate(0deg); opacity: 0; }
-    10% { opacity: 1; }
-    90% { opacity: 1; }
-    100% { transform: translateY(105vh) translateX(120px) rotate(360deg); opacity: 0; }
-}
+        @keyframes float {
+            0% { 
+                transform: translateY(-50px) translateX(0) rotate(0deg) scale(var(--petal-scale, 1)); 
+                opacity: 0; 
+            }
+            10% { 
+                opacity: 1; 
+            }
+            90% { 
+                opacity: 1; 
+            }
+            100% { 
+                /* 增加左右摆动的幅度(translateX)，让落叶/飘花更有风吹的感觉 */
+                transform: translateY(105vh) translateX(150px) rotate(450deg) scale(var(--petal-scale, 1)); 
+                opacity: 0; 
+            }
+        }
 
         /* 核心布局 */
         .main-wrapper {
@@ -561,8 +573,8 @@
                 
                 onlineSongs = songsData.map(song => {
                     return {
-                        name: song.title, // 网页显示的中文名
-                        url: supabaseBaseUrl + encodeURIComponent(song.file) // 真实的英文存储文件名
+                        name: song.title, 
+                        url: supabaseBaseUrl + encodeURIComponent(song.file) 
                     };
                 });
                 
@@ -582,20 +594,41 @@
             }
         }
 
-        // 背景飘花效果
+        // 高密度随机飘花生成器（PC端与手机端漫天飞舞版）
         function createDecorations() {
             const container = document.getElementById('decorations');
-            const count = 12; 
+            if (!container) return;
+            
+            container.innerHTML = ''; 
+            
+            // 【数量控制】提升到 45 片，保证大屏小屏皆有美感
+            const count = 45; 
+            
             for (let i = 0; i < count; i++) {
                 const petal = document.createElement('div');
                 petal.className = 'petal';
+                
+                // 1. 随机横向初始位置
                 petal.style.left = Math.random() * 100 + 'vw';
-                petal.style.top = Math.random() * -20 + 'px';
-                const size = Math.random() * 6 + 5;
+                
+                // 2. 随机初始高度，错开落下时间
+                petal.style.top = Math.random() * -50 + 'px';
+                
+                // 3. 随机大小：大花瓣鲜明，小花瓣深邃 (5px 到 13px 之间)
+                const size = Math.random() * 8 + 5;
                 petal.style.width = size + 'px';
                 petal.style.height = size + 'px';
-                petal.style.animationDelay = Math.random() * 8 + 's';
-                petal.style.animationDuration = Math.random() * 6 + 8 + 's';
+                
+                // 4. 随机动画延迟：陆陆续续出现 (0s 到 12s 内随机)
+                petal.style.animationDelay = Math.random() * 12 + 's';
+                
+                // 5. 随机飘落速度：有快有慢打造层次感 (8s 到 15s 一趟)
+                petal.style.animationDuration = Math.random() * 7 + 8 + 's';
+                
+                // 6. 随机微调缩放比例
+                const scale = (Math.random() * 0.5 + 0.8).toFixed(2);
+                petal.style.setProperty('--petal-scale', scale);
+                
                 container.appendChild(petal);
             }
         }
