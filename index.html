@@ -334,31 +334,30 @@
         .mahiru-character:hover .dialogue-bubble { opacity: 1; transform: translateY(0); }
 
         /* ===================================================
-           2. 【核心优化修改】纯移动端手机适配（稳定隔离无偏移版）
+           2. 纯移动端手机适配（稳定隔离无偏移版）
            =================================================== */
         @media (max-width: 768px) {
             body {
-                position: fixed;   /* 彻底锁死手机网页背景视口 */
+                position: fixed;   
                 top: 0; left: 0; right: 0; bottom: 0;
                 width: 100vw;
                 height: 100vh;
-                overflow: hidden !important; /* 强制禁止整页橡皮筋弹性回弹 */
+                overflow: hidden !important; 
                 align-items: center;
             }
 
-            /* 【重点】将原来的外包裹容器转变为局部滚动层，使滚动行为彻底独立 */
             .main-wrapper {
                 position: absolute;
                 top: 0; left: 0;
                 width: 100%;
                 height: 100%;
-                overflow-y: scroll; /* 仅允许播音乐盒与歌单在这个容器内部滚动 */
-                -webkit-overflow-scrolling: touch; /* 保证平滑丝滑滚动体验 */
+                overflow-y: scroll; 
+                -webkit-overflow-scrolling: touch; 
                 
                 flex-direction: column;
                 align-items: center;
                 gap: 20px;
-                padding: 20px 15px 180px; /* 底部留够空白空间给固定立绘 */
+                padding: 20px 15px 180px; 
                 box-sizing: border-box;
             }
 
@@ -367,7 +366,7 @@
                 max-width: 340px;
                 padding: 25px 20px 20px;
                 box-sizing: border-box;
-                flex-shrink: 0; /* 防止组件在局部轴上被无故挤压变型 */
+                flex-shrink: 0; 
             }
 
             .playlist-container {
@@ -378,7 +377,6 @@
                 flex-shrink: 0;
             }
 
-            /* 【关键】由于 body 静止，此时 fixed 定位的立绘能够真正稳固挂载在屏幕右下方 */
             .mahiru-character {
                 position: fixed;    
                 width: 110px;
@@ -390,25 +388,22 @@
                 background-position: bottom center;
             }
 
-            /* 禁用手机端的 Hover 位移拉伸效果 */
             .mahiru-character:hover { 
                 transform: none !important; 
             }
 
-            /* 【关键】文本气泡同步转换为高优先级的屏幕固定层级 */
             .dialogue-bubble {
                 position: fixed;    
-                bottom: 185px;      /* 恰好定位在移动端立绘的头顶位置 */
+                bottom: 185px;      
                 right: 15px;
                 font-size: 0.75rem;
                 padding: 6px 12px;
                 z-index: 10000;     
                 white-space: nowrap;
-                transform: translateY(0); /* 移动端直接让它显示完整姿态 */
+                transform: translateY(0); 
             }
             .dialogue-bubble::after { right: 25px; }
 
-            /* 移动端首次唤醒点击遮罩样式 */
             #mobileTouchUnlock {
                 position: fixed;
                 top: 0; left: 0; width: 100vw; height: 100vh;
@@ -440,7 +435,6 @@
             @keyframes pop { from { transform: scale(0.8); opacity: 0; } to { transform: scale(1); opacity: 1; } }
         }
 
-        /* 在PC端隐藏手机解锁提示 */
         @media (min-width: 769px) {
             #mobileTouchUnlock { display: none !important; }
         }
@@ -505,6 +499,11 @@
     </div>
 
     <script>
+        // ===================================================
+        // 【Supabase 配置】请将下面的项目ID替换成你自己的 ID 
+        // ===================================================
+        const supabaseBaseUrl = "https://dqfnxybsrbheeatzxxjg.supabase.co/storage/v1/object/public/music/";
+
         const audio = document.getElementById('myAudio');
         const playBtn = document.getElementById('playBtn');
         const prevBtn = document.getElementById('prevBtn');
@@ -533,9 +532,6 @@
         let localSongs = [];        
         let currentIndex = 0;       
 
-        // ===================================================
-        // 手机端专享：用户点击互动，静音空跑一次 audio 骗过系统权限限制
-        // ===================================================
         const mobileTouchUnlock = document.getElementById('mobileTouchUnlock');
         const unlockBtn = document.getElementById('unlockBtn');
         
@@ -545,13 +541,12 @@
             }).catch(e => console.log('音频通道激活中...'));
             
             mobileTouchUnlock.style.display = 'none';
-            // 移动端刚进入时激活一下气泡逻辑样式
             showBubbleWithTimer("今天想听什么歌呢？");
         }
         unlockBtn.addEventListener('click', unlockMobileAudio);
         mobileTouchUnlock.addEventListener('click', unlockMobileAudio);
 
-        // 从 music 文件夹内抓取 list.json 的配置文件
+        // 从 music 文件夹内抓取 list.json 的配置文件（仍然留在你的 Vercel 项目里）
         async function initOnlinePlaylist() {
             try {
                 const response = await fetch('./music/list.json');
@@ -562,7 +557,8 @@
                 onlineSongs = fileNames.map(name => {
                     return {
                         name: name,
-                        url: `./music/${encodeURIComponent(name)}`
+                        // 这里将原相对路径更改为 Supabase CDN 的绝对路径
+                        url: supabaseBaseUrl + encodeURIComponent(name)
                     };
                 });
                 
@@ -802,13 +798,11 @@
             audio.currentTime = newTime;
         });
 
-        // 带有关闭定时器的移动端/电脑通用气泡提醒方法
         let bubbleTimer = null;
         function showBubbleWithTimer(text) {
             if (bubbleTimer) clearTimeout(bubbleTimer);
             bubble.innerText = text;
             
-            // 针对移动端补充显示逻辑控制
             if (window.innerWidth <= 768) {
                 bubble.style.opacity = '1';
                 bubbleTimer = setTimeout(() => {
