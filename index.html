@@ -194,10 +194,9 @@
 
     <script>
         // ===================================================
-        // 🚨 唯一需要你修改的地方 🚨
-        // 把下面双引号里换成你在 Vercel 部署成功后给你的那串专属 https 网址！
+        // ☁️ 自动识别并绑定你的独立域名（不需要手动修改网址了）
         // ===================================================
-        const VERCEL_URL = "https://替换成你自己的项目名.vercel.app"; 
+        const VERCEL_URL = window.location.origin; 
 
         const supabaseBaseUrl = "https://dqfnxybsrbheeatzxxjg.supabase.co/storage/v1/object/public/music/";
         const audio = document.getElementById('myAudio');
@@ -336,7 +335,7 @@
         mahiruSkin.addEventListener('click', () => { const q = ["别突然戳我呀...", "听音乐的时候要保持好心情哦。", "这首歌，我也很喜欢呢。"]; showBubbleWithTimer(q[Math.floor(Math.random() * q.length)]); });
 
         // ===================================================
-        // ☁️ 云端直接播放的核心逻辑
+        // ☁️ 网易云云函数直接播放的核心逻辑
         // ===================================================
         const wyyIdInput = document.getElementById('wyyIdInput');
         const wyyDlBtn = document.getElementById('wyyDlBtn');
@@ -369,7 +368,7 @@
                     showBubbleWithTimer("点播失败：" + data.msg);
                 }
             } catch (err) {
-                showBubbleWithTimer("无法连接到云端服务，请确认 VERCEL_URL 是否配置正确？");
+                showBubbleWithTimer("无法连接到云端服务，请确认 Vercel 后端部署状态？");
             } finally {
                 wyyDlBtn.innerText = "直接播放"; wyyDlBtn.disabled = false;
             }
