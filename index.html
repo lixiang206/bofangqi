@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>椎名真昼の治愈音乐盒</title>
+    <title>しいなまひるの治愈音乐盒</title>
     <style>
         :root {
             --mahiru-gold: #F5E6CC;      
@@ -144,7 +144,7 @@
 
     <div id="mobileTouchUnlock">
         <div class="unlock-box">
-            <p>❀ 欢迎来到真昼的音乐盒 ❀<br><small style="color:#888; font-weight:normal;">点击下方按钮解锁手机端音频</small></p>
+            <p>❀ 欢迎来到しいなまひる的音乐盒 ❀<br><small style="color:#888; font-weight:normal;">点击下方按钮解锁手机端音频</small></p>
             <button id="unlockBtn">进入音乐盒</button>
         </div>
     </div>
@@ -382,17 +382,17 @@
                 playMode = 'random';
                 modeBtn.innerText = '🔀';
                 modeBtn.title = '随机播放';
-                showBubbleWithTimer("真昼提示：已切换到随机播放模式。");
+                showBubbleWithTimer("しいなまひる提示：已切换到随机播放模式。");
             } else if (playMode === 'random') {
                 playMode = 'single';
                 modeBtn.innerText = '🔂';
                 modeBtn.title = '单曲循环';
-                showBubbleWithTimer("真昼提示：要一直重复听这首歌吗？");
+                showBubbleWithTimer("しいなまひる提示：要一直重复听这首歌吗？");
             } else {
                 playMode = 'loop';
                 modeBtn.innerText = '🔁';
                 modeBtn.title = '列表循环';
-                showBubbleWithTimer("真昼提示：已切换到列表循环模式。");
+                showBubbleWithTimer("しいなまひる提示：已切换到列表循环模式。");
             }
         });
 
@@ -430,9 +430,9 @@
 
         wyyDlBtn.addEventListener('click', async () => {
             const songId = wyyIdInput.value.trim();
-            if (!songId || !/^\d+$/.test(songId)) { showBubbleWithTimer("请输入纯数字的歌曲 ID 呢。"); return; }
+            if (!songId || !/^\d+$/.test(songId)) { showBubbleWithTimer("しいなまひる:请输入纯数字的歌曲 ID 呢。"); return; }
 
-            showBubbleWithTimer("正在为您向云端请求解析，请稍候...");
+            showBubbleWithTimer("しいなまひる:正在为您向云端请求解析，请稍候...");
             wyyDlBtn.innerText = "解析中..."; wyyDlBtn.disabled = true;
 
             try {
@@ -446,19 +446,19 @@
                 const data = await response.json();
                 
                 if (data.success) {
-                    showBubbleWithTimer(`❀ 成功解析！正在为您播放《${data.songName}》❀`);
+                    showBubbleWithTimer(`❀ しいなまひる:成功解析！正在为您播放《${data.songName}》❀`);
                     audio.src = data.audioUrl;
                     songTitle.innerText = data.songName;
                     songArtist.innerText = data.artistName || "网易云在线点播";
                     playAudio();
                     wyyIdInput.value = '';
                 } else {
-                    showBubbleWithTimer("点播失败：" + data.msg);
+                    showBubbleWithTimer("しいなまひる:点播失败：" + data.msg);
                 }
             } catch (err) {
-                showBubbleWithTimer("无法连接到云端服务，请确认 Vercel 后端部署状态？");
+                showBubbleWithTimer("しいなまひる:无法连接到云端服务，请确认 Vercel 后端部署状态？");
             } finally {
-                wyyDlBtn.innerText = "直接播放"; wyyDlBtn.disabled = false;
+                wyyDlBtn.innerText = "しいなまひる:直接播放"; wyyDlBtn.disabled = false;
             }
         });
 
