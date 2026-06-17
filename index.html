@@ -168,9 +168,9 @@
 
             <div class="controls">
                 <button class="btn-side" id="prevBtn" title="上一首">⏮</button>
-                <button class="btn-mode" id="modeBtn" title="切换播放模式">🔁</button>
                 <button class="btn-main" id="playBtn">播放</button>
                 <button class="btn-side" id="nextBtn" title="下一首">⏭</button>
+                <button class="btn-mode" id="modeBtn" title="切换播放模式">🔁</button>
             </div>
 
             <button class="btn-folder" id="selectFolderBtn">📂 打开本地其它文件夹</button>
@@ -393,6 +393,23 @@
                 modeBtn.innerText = '🔁';
                 modeBtn.title = '列表循环';
                 showBubbleWithTimer("真昼提示：已切换到列表循环模式。");
+            }
+        });
+
+        // ===================================================
+        // ⌨️ PC端键盘快捷键绑定（空格键播放/暂停）
+        // ===================================================
+        window.addEventListener('keydown', (e) => {
+            // 当用户在网易云ID输入框中打字时，不触发空格暂停，允许正常输入空格
+            if (document.activeElement === wyyIdInput) return;
+
+            if (e.code === 'Space' || e.keyCode === 32) {
+                e.preventDefault(); // 阻止默认的空格滚屏行为
+                if (audio.paused) {
+                    playAudio();
+                } else {
+                    pauseAudio();
+                }
             }
         });
 
