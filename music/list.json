@@ -5,21 +5,10 @@
             "title": "夏祭り"
         },
         {
-            "file": "idol.mp3",
-            "title": "アイドル"
-        },
-        {
-            "file": "secretbase.mp3",
-            "title": "secret base ~君がくれたもの~ (10 years after Ver.)"
-        },
-        {
             "file": "SpotiMate.io - Romantic Memories.mp3",
             "title": "Spotimate.io - Romantic Memories"
-        },
-        {
-            "file": "yljy.mp3",
-            "title": "恋ひ恋ふ縁"
         }
+        
     ],
     "onlineSongs": [
         {
@@ -45,6 +34,18 @@
         {
             "file": "zanxie.mp3",
             "title": "炳烛志·斩邪"
+        },
+        {
+            "file": "yljy.mp3",
+            "title": "恋ひ恋ふ縁"
+        },
+        {
+            "file": "secretbase.mp3",
+            "title": "secret base ~君がくれたもの~ (10 years after Ver.)"
+        },
+        {
+            "file": "idol.mp3",
+            "title": "アイドル"
         }
     ]
 }
