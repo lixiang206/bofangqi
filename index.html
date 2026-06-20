@@ -2,7 +2,7 @@
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>しいなまひる的治愈音乐盒</title>
     <style>
         :root {
@@ -14,7 +14,9 @@
         }
 
         body {
-            margin: 0; padding: 0; height: 100vh;
+            margin: 0; padding: 0; 
+            height: 100vh; height: 100dvh; /* 适配现代移动端动态视口 */
+            width: 100vw;
             display: flex; justify-content: center; align-items: center;
             /* 默认电脑端背景图 */
             background: url('img/HLLn5bJa0AArBQe.jpg') no-repeat center center;
@@ -24,7 +26,7 @@
         }
 
         .decorations {
-            position: fixed; width: 100vw; height: 100vh; top: 0; left: 0;
+            position: fixed; width: 100vw; height: 100vh; height: 100dvh; top: 0; left: 0;
             pointer-events: none; z-index: 10000000 !important; 
         }
 
@@ -44,13 +46,13 @@
 
         .main-wrapper { display: flex; gap: 30px; z-index: 2; align-items: flex-start; }
 
-        /* 修改：核心毛玻璃模糊透明效果 */
+        /* 核心毛玻璃模糊透明效果 */
         .player-container {
-            background: rgba(255, 255, 255, 0.45); /* 降低白底不透明度 */
-            backdrop-filter: blur(20px) saturate(140%); /* 增强高斯模糊与色彩饱和度 */
+            background: rgba(255, 255, 255, 0.45); 
+            backdrop-filter: blur(20px) saturate(140%); 
             -webkit-backdrop-filter: blur(20px) saturate(140%);
             padding: 35px 30px 25px; border-radius: 28px; 
-            border: 2px solid rgba(255, 255, 255, 0.5); /* 柔和边框 */
+            border: 2px solid rgba(255, 255, 255, 0.5); 
             box-shadow: 0 15px 35px rgba(90, 75, 65, 0.1), 0 0 20px rgba(255, 255, 255, 0.2);
             text-align: center; width: 320px;
         }
@@ -100,9 +102,9 @@
         .wyy-btn:hover { background: #7A695E; transform: scale(1.05); }
         .wyy-btn:disabled { background: #ccc; cursor: not-allowed; transform: none; }
 
-        /* 修改：歌单面板同样适配更透亮的毛玻璃效果 */
+        /* 歌单面板透亮毛玻璃效果 */
         .playlist-container {
-            background: rgba(255, 255, 255, 0.4); /* 降低白底不透明度 */
+            background: rgba(255, 255, 255, 0.4); 
             backdrop-filter: blur(20px) saturate(140%);
             -webkit-backdrop-filter: blur(20px) saturate(140%);
             padding: 25px; border-radius: 28px; height: 380px; width: 320px;
@@ -165,36 +167,47 @@
             100% { box-shadow: 0 0 0 0 rgba(255, 255, 255, 0); }
         }
 
-        /* 移动端特殊适配 */
+        /* 修复移动端：全面重构手机端布局样式 */
         @media (max-width: 768px) {
             body { 
-                position: fixed; top: 0; left: 0; right: 0; bottom: 0; width: 100vw; height: 100vh; overflow: hidden !important; align-items: center; 
-                /* 手机端背景图切换 */
+                position: fixed; top: 0; left: 0; width: 100vw; 
+                height: 100vh; height: 100dvh; /* 强制锁定动态视口高度 */
+                overflow: hidden !important; 
                 background: url('img/xiaoermo.jpg') no-repeat center center;
                 background-size: cover;
             }
-            .main-wrapper { position: absolute; top: 0; left: 0; width: 100%; height: 100%; overflow-y: scroll; -webkit-overflow-scrolling: touch; flex-direction: column; align-items: center; gap: 20px; padding: 20px 15px 180px; box-sizing: border-box; }
             
-            /* 手机端同步适配毛玻璃半透明 */
+            /* 让内容包裹器也固定，并允许在固定空间内滚动，防止撑开产生白边 */
+            .main-wrapper { 
+                position: absolute; top: 0; left: 0; width: 100%; 
+                height: 100%; height: 100dvh;
+                overflow-y: auto; /* 允许纵向滚动，但不会撑大背景 */
+                -webkit-overflow-scrolling: touch; 
+                flex-direction: column; align-items: center; 
+                gap: 20px; padding: 20px 15px 120px; box-sizing: border-box; 
+            }
+            
             .player-container, .playlist-container { 
                 width: 100%; max-width: 340px; box-sizing: border-box; flex-shrink: 0; 
+                background: rgba(255, 255, 255, 0.5); /* 稍微提升手机端的可视度 */
                 backdrop-filter: blur(20px) saturate(140%);
                 -webkit-backdrop-filter: blur(20px) saturate(140%);
             }
             .playlist-container { height: 280px; }
             
-            .character-box { position: fixed !important; width: 110px; height: 175px; right: 15px; bottom: 10px; opacity: 0.95; z-index: 999999 !important; pointer-events: auto; }
+            /* 手机端立牌修正 */
+            .character-box { position: fixed !important; width: 90px; height: 145px; right: 10px; bottom: 10px; opacity: 0.95; z-index: 999999 !important; pointer-events: auto; }
             .mahiru-character { background-size: contain; }
             .character-box:hover .mahiru-character { transform: none !important; }
             
-            .dialogue-bubble { position: fixed !important; bottom: 185px; right: 15px; font-size: 0.75rem; padding: 6px 12px; z-index: 1000000 !important; transform: translateY(0) !important; }
+            .dialogue-bubble { position: fixed !important; bottom: 155px; right: 10px; font-size: 0.75rem; padding: 6px 12px; z-index: 1000000 !important; transform: translateY(0) !important; }
             .dialogue-bubble::after { right: 25px; }
 
             .mahiru-link-btn {
-                top: -55px; left: 30px; width: 44px; height: 44px;
+                top: -50px; left: 20px; width: 40px; height: 40px;
             }
 
-            #mobileTouchUnlock { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(90, 75, 65, 0.4); backdrop-filter: blur(4px); -webkit-backdrop-filter: blur(4px); z-index: 99999; display: flex; justify-content: center; align-items: center; color: #5A4B41; font-weight: bold; }
+            #mobileTouchUnlock { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; height: 100dvh; background: rgba(90, 75, 65, 0.4); backdrop-filter: blur(4px); -webkit-backdrop-filter: blur(4px); z-index: 99999; display: flex; justify-content: center; align-items: center; color: #5A4B41; font-weight: bold; }
             .unlock-box { background: rgba(255, 255, 255, 0.95); padding: 25px 30px; border-radius: 20px; text-align: center; box-shadow: 0 10px 25px rgba(0,0,0,0.15); border: 2px solid var(--mahiru-gold); }
             .unlock-box button { background: #A79284; color: white; border: none; padding: 10px 24px; border-radius: 50px; font-size: 0.9rem; cursor: pointer; }
         }
@@ -255,15 +268,11 @@
         </div>
     </div>
 
-    <!-- 真昼立牌整体复合容器 -->
     <div class="character-box" id="characterBox">
-        <!-- 外链点击圆形按钮 -->
         <div class="mahiru-link-btn" onclick="window.open('https://www.fsdm02.com/vodplay/WNsJJJJk-1-1.html', '_blank')" title="前往播放页">
             <div class="link-tooltip">去看真昼吧~</div>
         </div>
-        <!-- 立牌本体 -->
         <div class="mahiru-character" id="mahiruSkin"></div>
-        <!-- 对话气泡 -->
         <div class="dialogue-bubble" id="bubble">今天想听什么歌呢？</div>
     </div>
 
@@ -477,7 +486,7 @@
                 showBubbleWithTimer("しいなまひる提示：要一直重复听这首歌吗？");
             } else {
                 playMode = 'loop'; modeBtn.innerText = '🔁'; modeBtn.title = '列表循环';
-                showBubbleWithTimer("しいなまひ放模式：已切换到列表循环模式。");
+                showBubbleWithTimer("しいなまひる提示：已切换到列表循环模式。");
             }
         });
 
