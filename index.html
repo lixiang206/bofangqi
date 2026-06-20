@@ -13,16 +13,25 @@
             --accent-gold: #E6C594;
         }
 
-        body {
-            margin: 0; padding: 0; 
-            height: 100vh; height: 100dvh; /* 适配现代移动端动态视口 */
-            width: 100vw;
-            display: flex; justify-content: center; align-items: center;
+        /* 核心修复：彻底锁死根节点，防止任何形式的滚动溢出白边 */
+        html, body {
+            margin: 0; padding: 0;
+            width: 100%; height: 100%;
+            height: 100vh; height: 100dvh;
+            overflow: hidden;
+            background-color: #f7ede2; /* 保底温馨底色，防止图没加载时出现纯白 */
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            color: var(--text-color);
+        }
+
+        /* 新增：独立背景层，与内容分离，100%全屏覆盖，绝对不留白 */
+        .bg-layer {
+            position: fixed; top: 0; left: 0;
+            width: 100vw; height: 100vh; height: 100dvh;
             /* 默认电脑端背景图 */
             background: url('img/HLLn5bJa0AArBQe.jpg') no-repeat center center;
-            background-size: cover;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            color: var(--text-color); overflow: hidden; position: relative;
+            background-size: cover !important;
+            z-index: 1;
         }
 
         .decorations {
@@ -44,9 +53,18 @@
             100% { transform: translateY(105vh) translateX(180px) rotate(450deg) scale(var(--petal-scale, 1)); opacity: 0; }
         }
 
-        .main-wrapper { display: flex; gap: 30px; z-index: 2; align-items: flex-start; }
+        /* 核心重构：内容容器在背景上方，PC端居中，移动端允许顺畅上下滚动 */
+        .main-wrapper { 
+            position: absolute; top: 0; left: 0;
+            width: 100%; height: 100%;
+            display: flex; justify-content: center; align-items: center;
+            gap: 30px; z-index: 2; box-sizing: border-box;
+            overflow-x: hidden; overflow-y: auto; /* 允许纵向溢出滚动 */
+            -webkit-overflow-scrolling: touch;
+            padding: 40px 20px;
+        }
 
-        /* 核心毛玻璃模糊透明效果 */
+        /* 毛玻璃模糊透明效果 */
         .player-container {
             background: rgba(255, 255, 255, 0.45); 
             backdrop-filter: blur(20px) saturate(140%); 
@@ -54,7 +72,7 @@
             padding: 35px 30px 25px; border-radius: 28px; 
             border: 2px solid rgba(255, 255, 255, 0.5); 
             box-shadow: 0 15px 35px rgba(90, 75, 65, 0.1), 0 0 20px rgba(255, 255, 255, 0.2);
-            text-align: center; width: 320px;
+            text-align: center; width: 320px; flex-shrink: 0;
         }
 
         .disc-area { position: relative; width: 200px; height: 200px; margin: 0 auto 20px; }
@@ -107,7 +125,7 @@
             background: rgba(255, 255, 255, 0.4); 
             backdrop-filter: blur(20px) saturate(140%);
             -webkit-backdrop-filter: blur(20px) saturate(140%);
-            padding: 25px; border-radius: 28px; height: 380px; width: 320px;
+            padding: 25px; border-radius: 28px; height: 380px; width: 320px; flex-shrink: 0;
             box-shadow: 0 15px 35px rgba(90, 75, 65, 0.05); border: 2px solid rgba(255, 255, 255, 0.4);
             display: flex; flex-direction: column;
         }
@@ -167,33 +185,27 @@
             100% { box-shadow: 0 0 0 0 rgba(255, 255, 255, 0); }
         }
 
-        /* 修复移动端：全面重构手机端布局样式 */
+        /* 移动端高级适配 */
         @media (max-width: 768px) {
-            body { 
-                position: fixed; top: 0; left: 0; width: 100vw; 
-                height: 100vh; height: 100dvh; /* 强制锁定动态视口高度 */
-                overflow: hidden !important; 
+            .bg-layer { 
+                /* 手机端背景图彻底覆盖 */
                 background: url('img/xiaoermo.jpg') no-repeat center center;
-                background-size: cover;
+                background-size: cover !important;
             }
             
-            /* 让内容包裹器也固定，并允许在固定空间内滚动，防止撑开产生白边 */
             .main-wrapper { 
-                position: absolute; top: 0; left: 0; width: 100%; 
-                height: 100%; height: 100dvh;
-                overflow-y: auto; /* 允许纵向滚动，但不会撑大背景 */
-                -webkit-overflow-scrolling: touch; 
-                flex-direction: column; align-items: center; 
-                gap: 20px; padding: 20px 15px 120px; box-sizing: border-box; 
+                flex-direction: column; 
+                justify-content: flex-start; /* 顶部对齐开始纵向平铺，防止溢出挤压 */
+                align-items: center; 
+                gap: 25px; 
+                padding: 25px 15px 140px; /* 底部留够空白，让立牌不挡住内容 */
             }
             
             .player-container, .playlist-container { 
-                width: 100%; max-width: 340px; box-sizing: border-box; flex-shrink: 0; 
-                background: rgba(255, 255, 255, 0.5); /* 稍微提升手机端的可视度 */
-                backdrop-filter: blur(20px) saturate(140%);
-                -webkit-backdrop-filter: blur(20px) saturate(140%);
+                width: 100%; max-width: 340px; 
+                box-sizing: border-box; 
             }
-            .playlist-container { height: 280px; }
+            .playlist-container { height: 320px; } /* 稍微调高一点点，防止歌单底部文字挤在一起 */
             
             /* 手机端立牌修正 */
             .character-box { position: fixed !important; width: 90px; height: 145px; right: 10px; bottom: 10px; opacity: 0.95; z-index: 999999 !important; pointer-events: auto; }
@@ -203,9 +215,7 @@
             .dialogue-bubble { position: fixed !important; bottom: 155px; right: 10px; font-size: 0.75rem; padding: 6px 12px; z-index: 1000000 !important; transform: translateY(0) !important; }
             .dialogue-bubble::after { right: 25px; }
 
-            .mahiru-link-btn {
-                top: -50px; left: 20px; width: 40px; height: 40px;
-            }
+            .mahiru-link-btn { top: -50px; left: 20px; width: 40px; height: 40px; }
 
             #mobileTouchUnlock { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; height: 100dvh; background: rgba(90, 75, 65, 0.4); backdrop-filter: blur(4px); -webkit-backdrop-filter: blur(4px); z-index: 99999; display: flex; justify-content: center; align-items: center; color: #5A4B41; font-weight: bold; }
             .unlock-box { background: rgba(255, 255, 255, 0.95); padding: 25px 30px; border-radius: 20px; text-align: center; box-shadow: 0 10px 25px rgba(0,0,0,0.15); border: 2px solid var(--mahiru-gold); }
@@ -215,6 +225,8 @@
     </style>
 </head>
 <body>
+
+    <div class="bg-layer"></div>
 
     <div id="mobileTouchUnlock">
         <div class="unlock-box">
