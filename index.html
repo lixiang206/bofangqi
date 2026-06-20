@@ -212,7 +212,24 @@
             .mahiru-character { background-size: contain; }
             .character-box:hover .mahiru-character { transform: none !important; }
             
-            .dialogue-bubble { position: fixed !important; bottom: 155px; right: 10px; font-size: 0.75rem; padding: 6px 12px; z-index: 1000000 !important; transform: translateY(0) !important; }
+            .dialogue-bubble { 
+                position: absolute; 
+                    bottom: 310px; 
+                    right: 10px; 
+                    background: rgba(255, 255, 255, 0.85); 
+                    backdrop-filter: blur(8px); 
+                    padding: 10px 16px; 
+                    border-radius: 16px; 
+                    font-size: 0.85rem; 
+                    box-shadow: 0 5px 15px rgba(0,0,0,0.08); 
+                    opacity: 0; 
+                    transform: translateY(10px); 
+                    transition: all 0.4s ease; 
+                    pointer-events: none; 
+                    white-space: nowrap; 
+                    /* 核心修复：把层级从 4 提升到 6，使其超越按钮的 z-index: 5 */
+                    z-index: 6; 
+}
             .dialogue-bubble::after { right: 25px; }
 
             .mahiru-link-btn { top: -50px; left: 20px; width: 40px; height: 40px; }
