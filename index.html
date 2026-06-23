@@ -327,6 +327,7 @@
             audio.play().then(() => { audio.pause(); }).catch(e => console.log('激活中...'));
             mobileTouchUnlock.style.display = 'none';
             showBubbleWithTimer("今天想听什么歌呢？");
+            updateMediaSession(); // 激活初始会话
         }
         unlockBtn.addEventListener('click', unlockMobileAudio);
         mobileTouchUnlock.addEventListener('click', unlockMobileAudio);
@@ -441,15 +442,39 @@
                 songArtist.innerText = (currentMode === 'mahiru') ? "しいなまひる 专属" : "网页内置歌单";
             }
             updateActiveHighlight(); progressBar.style.width = '0%'; currentTimeUI.innerText = '00:00';
+            
+            // 每次切歌更新系统锁屏状态
+            updateMediaSession();
+
             if (autoPlay) { playAudio(); } else { pauseAudio(); }
         }
 
-        function playAudio() { audio.play().catch(() => { pauseAudio(); }); playBtn.innerText = '暂停'; disc.style.animationPlayState = 'running'; tonearm.classList.add('playing'); }
-        function pauseAudio() { audio.pause(); playBtn.innerText = '播放'; disc.style.animationPlayState = 'paused'; tonearm.classList.remove('playing'); }
+        function playAudio() { 
+            audio.play().then(() => {
+                if ('mediaSession' in navigator) {
+                    navigator.mediaSession.playbackState = "playing";
+                }
+            }).catch(() => { pauseAudio(); }); 
+            playBtn.innerText = '暂停'; 
+            disc.style.animationPlayState = 'running'; 
+            tonearm.classList.add('playing'); 
+        }
+        
+        function pauseAudio() { 
+            audio.pause(); 
+            if ('mediaSession' in navigator) {
+                navigator.mediaSession.playbackState = "paused";
+            }
+            playBtn.innerText = '播放'; 
+            disc.style.animationPlayState = 'paused'; 
+            tonearm.classList.remove('playing'); 
+        }
 
         playBtn.addEventListener('click', () => { if (audio.paused) { playAudio(); } else { pauseAudio(); } });
         
-        prevBtn.addEventListener('click', () => { 
+        prevBtn.addEventListener('click', () => { handlePrevSong(); });
+
+        function handlePrevSong() {
             const activeList = getActiveList(); 
             if (activeList.length === 0) return;
             
@@ -461,7 +486,7 @@
                 if (idx < 0) idx = activeList.length - 1;
             }
             loadSong(idx, true); 
-        });
+        }
 
         function handleNextSong(isAutoEnd = false) {
             const activeList = getActiveList();
@@ -555,6 +580,27 @@
                 wyyDlBtn.innerText = "直接播放"; wyyDlBtn.disabled = false;
             }
         });
+
+        /* ================= 核心修复：Media Session 锁屏多媒体控制 ================= */
+        function updateMediaSession() {
+            if ('mediaSession' in navigator) {
+                // 1. 设置通知栏/锁屏界面显示的歌曲元数据
+                navigator.mediaSession.metadata = new MediaMetadata({
+                    title: songTitle.innerText,
+                    artist: songArtist.innerText,
+                    album: 'しいなまひる的治愈音乐盒',
+                    artwork: [
+                        { src: 'img/changpian.jpg', sizes: '512x512', type: 'image/jpeg' }
+                    ]
+                });
+
+                // 2. 绑定锁屏状态下的手势/物理按键切歌响应（实现息屏切歌的核心）
+                navigator.mediaSession.setActionHandler('play', () => { playAudio(); });
+                navigator.mediaSession.setActionHandler('pause', () => { pauseAudio(); });
+                navigator.mediaSession.setActionHandler('previoustrack', () => { handlePrevSong(); });
+                navigator.mediaSession.setActionHandler('nexttrack', () => { handleNextSong(false); });
+            }
+        }
 
         window.addEventListener('DOMContentLoaded', initOnlinePlaylist);
     </script>
