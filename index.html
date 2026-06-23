@@ -102,11 +102,13 @@
         .progress-bar { height: 100%; width: 0%; background: linear-gradient(90deg, var(--accent-gold), var(--text-color)); border-radius: 10px; position: absolute; top: 0; left: 0; transition: width 0.1s linear; }
         .time-info { display: flex; justify-content: space-between; font-size: 0.75rem; opacity: 0.7; }
 
-        .controls { display: flex; justify-content: center; align-items: center; gap: 12px; margin-bottom: 15px; }
+        /* 播放控制栏容器 */
+        .controls { display: flex; justify-content: center; align-items: center; gap: 10px; margin-bottom: 15px; }
         .controls button { background: var(--text-color); color: #fff; border: none; cursor: pointer; transition: all 0.2s ease; box-shadow: 0 4px 10px rgba(90, 75, 65, 0.2); }
-        .btn-main { padding: 12px 24px; font-size: 1rem; border-radius: 50px; }
+        .btn-main { padding: 12px 22px; font-size: 1rem; border-radius: 50px; }
         .btn-side { padding: 10px 14px; font-size: 0.9rem; border-radius: 50%; }
-        .btn-mode { padding: 10px 12px; font-size: 0.85rem; border-radius: 50%; background: #A79284 !important; }
+        /* 模式与新按钮小修饰 */
+        .btn-mode, .btn-current-dl { padding: 10px 12px; font-size: 0.85rem; border-radius: 50%; background: #A79284 !important; }
         .controls button:hover { transform: scale(1.08); background: #7A695E; }
 
         .btn-folder { background: #A79284 !important; padding: 8px 16px; border-radius: 8px; font-size: 0.85rem; color: white; border: none; cursor: pointer; transition: background 0.2s; width: 100%; box-sizing: border-box; }
@@ -138,7 +140,6 @@
         .track-list::-webkit-scrollbar { width: 6px; }
         .track-list::-webkit-scrollbar-thumb { background: rgba(90, 75, 65, 0.2); border-radius: 10px; }
 
-        /* 修复：将列表项改造为弹性布局，方便容纳文字与右侧固定下载钮 */
         .track-item { 
             display: flex; justify-content: space-between; align-items: center;
             padding: 10px 12px; border-radius: 8px; cursor: pointer; font-size: 0.85rem; 
@@ -149,7 +150,6 @@
 
         .track-name { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; flex-grow: 1; }
         
-        /* 独立提取的下载图标样式，避免点中下载触发切歌 */
         .track-dl-icon { 
             font-size: 1.05rem; cursor: pointer; padding: 2px 6px; border-radius: 4px;
             transition: all 0.2s; color: var(--text-color); opacity: 0.6; flex-shrink: 0;
@@ -229,6 +229,7 @@
                 <button class="btn-main" id="playBtn">播放</button>
                 <button class="btn-side" id="nextBtn" title="下一首">⏭</button>
                 <button class="btn-mode" id="modeBtn" title="切换播放模式">🔁</button>
+                <button class="btn-current-dl" id="currentDlBtn" title="下载当前播放的这首歌">📥</button>
             </div>
 
             <button class="btn-folder" id="selectFolderBtn">📂 打开本地其它文件夹</button>
@@ -269,6 +270,7 @@
         const prevBtn = document.getElementById('prevBtn');
         const nextBtn = document.getElementById('nextBtn');
         const modeBtn = document.getElementById('modeBtn');
+        const currentDlBtn = document.getElementById('currentDlBtn'); // 新增变量
         const selectFolderBtn = document.getElementById('selectFolderBtn');
         const disc = document.getElementById('disc');
         const tonearm = document.getElementById('tonearm');
@@ -295,7 +297,9 @@
         
         let playMode = 'loop'; 
 
-        // 判断当前设备是否为手机/移动端
+        // 全局状态跟踪当前播放的歌曲信息（包含网易云外链）
+        let currentPlayingInfo = { name: "", url: "" };
+
         function isMobileDevice() {
             return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) || window.innerWidth <= 768;
         }
@@ -390,7 +394,6 @@
             return localSongs;
         }
 
-        // 修改：渲染歌单函数，注入下载图标并绑定独立事件
         function renderPlaylist() {
             trackListUI.innerHTML = ''; 
             const activeList = getActiveList();
@@ -402,29 +405,25 @@
                 
                 const displayName = (currentMode === 'local') ? item.name.replace(/\.[^/.]+$/, "") : item.name;
                 
-                // 歌名部分
                 const nameSpan = document.createElement('span');
                 nameSpan.className = 'track-name';
                 nameSpan.innerText = `${index + 1}. ${displayName}`;
                 
-                // 绑定整行点击切歌（除下载图标外）
                 li.addEventListener('click', (e) => { 
-                    if(e.target.classList.contains('track-dl-icon')) return; // 防止点下载触发切歌
+                    if(e.target.classList.contains('track-dl-icon')) return; 
                     loadSong(index, true); 
                 });
                 
                 li.appendChild(nameSpan);
 
-                // 如果是本地读取的文件夹模式，下载按钮无意义，所以只给网络音频（真昼、内置、网易云等）加下载按钮
                 if (currentMode !== 'local') {
                     const dlIcon = document.createElement('span');
                     dlIcon.className = 'track-dl-icon';
                     dlIcon.innerHTML = '📥';
                     dlIcon.title = '下载这首音频';
                     
-                    // 绑定下载图标的专属执行
                     dlIcon.addEventListener('click', (e) => {
-                        e.stopPropagation(); // 阻止事件冒泡
+                        e.stopPropagation(); 
                         handleAudioDownload(item);
                     });
                     li.appendChild(dlIcon);
@@ -446,9 +445,11 @@
             if (currentMode === 'local') {
                 const fileHandle = activeList[currentIndex]; const file = await fileHandle.getFile();
                 audio.src = URL.createObjectURL(file); songTitle.innerText = file.name.replace(/\.[^/.]+$/, ""); songArtist.innerText = "本地音乐";
+                currentPlayingInfo = { name: songTitle.innerText, url: "" }; // 本地音乐不提供下载流
             } else {
                 const song = activeList[currentIndex]; audio.src = song.url; songTitle.innerText = song.name; 
                 songArtist.innerText = (currentMode === 'mahiru') ? "しいなまひる 专属" : "网页内置歌单";
+                currentPlayingInfo = { name: song.name, url: song.url };
             }
             updateActiveHighlight(); progressBar.style.width = '0%'; currentTimeUI.innerText = '00:00';
             
@@ -497,6 +498,15 @@
             else { playMode = 'loop'; modeBtn.innerText = '🔁'; modeBtn.title = '列表循环'; showBubbleWithTimer("しいなまひる提示：已切换到列表循环模式。"); }
         });
 
+        /* 新增：绑定“当前播放下载”按钮的点击事件 */
+        currentDlBtn.addEventListener('click', () => {
+            if (!currentPlayingInfo.url) {
+                showBubbleWithTimer("しいなまひる:本地导入的歌曲不能再次下载哦~");
+                return;
+            }
+            handleAudioDownload(currentPlayingInfo);
+        });
+
         window.addEventListener('keydown', (e) => {
             if (document.activeElement === wyyIdInput) return;
             if (e.code === 'Space' || e.keyCode === 32) { e.preventDefault(); if (audio.paused) { playAudio(); } else { pauseAudio(); } }
@@ -529,6 +539,10 @@
                     audio.src = data.audioUrl;
                     songTitle.innerText = data.songName;
                     songArtist.innerText = data.artistName || "网易云在线点播";
+                    
+                    // 核心修改：将网易云解析拿到的直链和歌名同步给全局播放状态
+                    currentPlayingInfo = { name: data.songName, url: data.audioUrl };
+
                     playAudio();
                     wyyIdInput.value = '';
                 } else { showBubbleWithTimer("しいなまひる:点播失败：" + data.msg); }
@@ -536,19 +550,17 @@
             finally { wyyDlBtn.innerText = "直接播放"; wyyDlBtn.disabled = false; }
         });
 
-        /* ================= 新增核心：音频下载分流控制 ================= */
+        /* ================= 音频下载分流控制 ================= */
         async function handleAudioDownload(songItem) {
             if (!songItem || !songItem.url) return;
             const fileName = songItem.name + ".mp3";
 
-            // 手机端流程：弹窗确认后执行下载
             if (isMobileDevice()) {
                 const confirmDownload = confirm(`❀ 真昼提示 ❀\n确定要下载歌曲《${songItem.name}》到手机中吗？`);
                 if (!confirmDownload) return;
                 showBubbleWithTimer("正在拉取音频流，请稍候...");
                 triggerStreamDownload(songItem.url, fileName);
             } 
-            // 电脑端流程：采用高级 File System Access API 弹出选盘另存为窗口，不限制磁盘分区
             else {
                 if (window.showSaveFilePicker) {
                     try {
@@ -568,18 +580,15 @@
                         showBubbleWithTimer("❀ 歌曲已成功写入指定位置！");
                     } catch (err) {
                         if (err.name !== 'AbortError') { 
-                            // 降级策略：如果选盘报错则退回传统下载
                             triggerStreamDownload(songItem.url, fileName); 
                         }
                     }
                 } else {
-                    // 不支持高级选盘的旧版浏览器直接传统下载
                     triggerStreamDownload(songItem.url, fileName);
                 }
             }
         }
 
-        // 统一的数据流跨域解析下载核心
         function triggerStreamDownload(url, filename) {
             fetch(url)
                 .then(response => response.blob())
@@ -594,7 +603,6 @@
                     a.remove();
                 })
                 .catch(() => {
-                    // 如果跨域资源由于 CORS 拦截无法通过 fetch 获取流，执行最终保底（部分手机浏览器将直接在新窗口打开播放页，需长按手动保存）
                     const a = document.createElement('a');
                     a.href = url;
                     a.download = filename;
