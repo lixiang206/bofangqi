@@ -228,7 +228,7 @@
 
     <div id="mobileTouchUnlock">
         <div class="unlock-box">
-            <p>❀ 欢迎来到しいなまひ还原的音乐盒 ❀<br><small style="color:#888; font-weight:normal;">点击下方按钮解锁手机端音频</small></p>
+            <p>❀ 欢迎来到しいなまひる的治愈音乐盒 ❀<br><small style="color:#888; font-weight:normal;">点击下方按钮解锁手机端音频</small></p>
             <button id="unlockBtn">进入音乐盒</button>
         </div>
     </div>
@@ -317,6 +317,8 @@
         const progressBar = document.getElementById('progressBar');
         const currentTimeUI = document.getElementById('currentTime');
         const totalTimeUI = document.getElementById('totalTime');
+        const wyyIdInput = document.getElementById('wyyIdInput');
+        const wyyDlBtn = document.getElementById('wyyDlBtn');
         
         const tabMahiru = document.getElementById('tabMahiru');
         const tabOnline = document.getElementById('tabOnline');
@@ -501,7 +503,6 @@
                 songArtist.innerText = (currentMode === 'mahiru') ? "しいなまひる 专属" : "网页内置歌单";
                 currentPlayingInfo = { name: song.name, url: song.url, id: song.id };
                 
-                // 如果配置了网易云ID，则去自动请求歌词
                 if(song.id) {
                     fetchLyrics(song.id);
                 } else {
@@ -519,7 +520,7 @@
         async function fetchLyrics(songId) {
             clearLyrics("正在加载歌词...");
             try {
-                // 使用官方直接可外链调用的网易云歌词公开 API 节点
+                // 直接使用网易云公开无需凭证的歌词获取 API 接口
                 const res = await fetch(`https://music.163.com/api/song/media?id=${songId}`);
                 if (!res.ok) throw new Error();
                 const data = await res.json();
@@ -530,7 +531,6 @@
                     clearLyrics("暂无纯歌词数据");
                 }
             } catch (err) {
-                // 备用兜底策略（如果官方由于某些限制拒绝跨域，通过Vercel或原服务进行代理）
                 clearLyrics("歌词加载失败或暂无歌词");
             }
         }
@@ -546,7 +546,6 @@
                     const minutes = parseInt(match[1]);
                     const seconds = parseInt(match[2]);
                     const milliseconds = parseInt(match[3]);
-                    // 换算成秒数时间轴
                     const time = minutes * 60 + seconds + (milliseconds / 1000);
                     const text = line.replace(timeReg, '').trim();
                     if (text) {
@@ -555,7 +554,6 @@
                 }
             });
 
-            // 按照时间由小到大排序
             parsedLyrics.sort((a, b) => a.time - b.time);
             renderLyricsUI();
         }
@@ -600,7 +598,6 @@
                 const activeLine = document.getElementById(`lrc-${activeIndex}`);
                 if (activeLine && !activeLine.classList.contains('active')) {
                     activeLine.classList.add('active');
-                    // 让歌词包裹器平滑滚动到当前高亮行中央
                     const containerHeight = lyricsWrapper.clientHeight;
                     const lineOffsetTop = activeLine.offsetTop;
                     const lineHeigh = activeLine.clientHeight;
@@ -668,7 +665,6 @@
             if (!isNaN(audio.duration)) { 
                 progressBar.style.width = `${(audio.currentTime / audio.duration) * 100}%`; 
                 currentTimeUI.innerText = formatTime(audio.currentTime); 
-                // 触发歌词滚动同步
                 updateLyricsScroll(audio.currentTime);
             } 
         });
@@ -702,12 +698,17 @@
                     currentPlayingInfo = { name: data.songName, url: data.audioUrl, id: songId };
 
                     playAudio();
-                    // 网易云搜索点播成功后，直接调取歌词
-                    fetchLyrics(songId);
+                    
+                    // 【优化】：如果后端返回的数据包里包含了 lyric 字段，直接读取它；否则前端去兜底抓取
+                    if (data.lyric) {
+                        parseLyricText(data.lyric);
+                    } else {
+                        fetchLyrics(songId);
+                    }
                     wyyIdInput.value = '';
                 } else { showBubbleWithTimer("しいなまひる:点播失败：" + data.msg); }
             } catch (err) { 
-                // 点播接口由于跨域或未搭建时，仍然直接去拉歌词
+                // 后端接口若没做变动或连接失败时，前端自己继续去拉取并渲染歌词，确保功能不挂掉
                 fetchLyrics(songId);
                 showBubbleWithTimer("しいなまひる:无法连接到云端 service，请确认 Vercel 后端部署状态？"); 
             } 
@@ -793,7 +794,6 @@
             }
         }
 
-        // 初始化网页初次加载时的问候
         window.addEventListener('DOMContentLoaded', () => {
             initOnlinePlaylist();
             setTimeout(() => {
