@@ -147,11 +147,35 @@
             overflow-y: auto; flex-grow: 1; scroll-behavior: smooth; padding: 10px 0;
         }
         .lyrics-wrapper::-webkit-scrollbar { width: 0px; display: none; }
+
+        /* 【已重构】Spotify 风格歌词行样式定义 */
         .lyric-line {
-            font-size: 0.88rem; padding: 8px 10px; line-height: 1.5; opacity: 0.35; transition: all 0.3s ease;
+            font-size: 0.95rem; 
+            padding: 10px 14px; 
+            line-height: 1.6; 
+            opacity: 0.4; 
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+            cursor: pointer;          /* 可点击手势 */
+            border-radius: 8px;
+            user-select: none;        /* 避免双击误选文本 */
+            text-align: center;
         }
+        
+        /* 鼠标悬停在非活动行时的 Spotify 提亮质感 */
+        .lyric-line:hover:not(.active) {
+            opacity: 0.75;
+            background: rgba(255, 255, 255, 0.15);
+        }
+        
+        /* 活动行高亮状态 */
         .lyric-line.active {
-            opacity: 1; font-weight: bold; font-size: 1.02rem; color: #7A695E; transform: scale(1.02);
+            opacity: 1; 
+            font-weight: bold; 
+            font-size: 1.1rem; 
+            color: var(--text-color);   
+            transform: scale(1.03);
+            background: rgba(255, 255, 255, 0.25);
+            box-shadow: 0 4px 12px rgba(90, 75, 65, 0.05);
         }
 
         /* 电脑端独立模块：右侧高大的歌单区域 */
@@ -567,6 +591,7 @@
             renderLyricsUI();
         }
 
+        /* 【已重构】动态构建歌词行并深度绑定 Spotify 跳转与即时滚动反馈逻辑 */
         function renderLyricsUI() {
             if (parsedLyrics.length === 0) {
                 clearLyrics("歌词解析空");
@@ -578,6 +603,18 @@
                 div.className = 'lyric-line';
                 div.id = `lrc-${index}`;
                 div.innerText = item.text;
+                
+                // 绑定点击跳转时间事件
+                div.addEventListener('click', () => {
+                    if (!isNaN(audio.duration)) {
+                        audio.currentTime = item.time; 
+                        if (audio.paused) {
+                            playAudio();
+                        }
+                        updateLyricsScroll(item.time);
+                    }
+                });
+                
                 lyricsWrapper.appendChild(div);
             });
             lyricsWrapper.scrollTop = 0;
@@ -589,6 +626,7 @@
             lyricsWrapper.innerHTML = `<div class="lyric-line" style="opacity: 0.6; padding-top: ${offset};">${msg}</div>`;
         }
 
+        /* 【已优化】改用 behavior: 'smooth' 带来极度丝滑的滚动推移效果 */
         function updateLyricsScroll(currentTime) {
             if (parsedLyrics.length === 0) return;
             
@@ -611,7 +649,12 @@
                     const containerHeight = lyricsWrapper.clientHeight;
                     const lineOffsetTop = activeLine.offsetTop;
                     const lineHeight = activeLine.clientHeight;
-                    lyricsWrapper.scrollTop = lineOffsetTop - (containerHeight / 2) + (lineHeight / 2);
+                    
+                    // 丝滑滚动到容器中央
+                    lyricsWrapper.scrollTo({
+                        top: lineOffsetTop - (containerHeight / 2) + (lineHeight / 2),
+                        behavior: 'smooth'
+                    });
                 }
             }
         }
@@ -686,7 +729,6 @@
         /* ================= 新增：异步读取剪贴板一键粘贴核心逻辑 ================= */
         wyyPasteBtn.addEventListener('click', async () => {
             try {
-                // 部分现代移动端浏览器在非 HTTPS 环境下或未授权时可能会被拒
                 if (!navigator.clipboard || !navigator.clipboard.readText) {
                     showBubbleWithTimer("しいなまひる: 当前浏览器不支持或者拒绝了剪贴板读取请求。");
                     return;
@@ -699,7 +741,6 @@
                     return;
                 }
                 
-                // 贴心优化：如果用户复制的是整个网易云的分享链接，用正则自动把里面的 ID 给过滤出来
                 const match = trimmed.match(/id=(\d+)/);
                 if (match && match[1]) {
                     wyyIdInput.value = match[1];
