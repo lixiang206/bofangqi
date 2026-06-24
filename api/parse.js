@@ -4,117 +4,57 @@ export default async function handler(req, res) {
     // 允许前端跨域
     res.setHeader('Access-Control-Allow-Origin', '*');
     res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
-    res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
     if (req.method === 'OPTIONS') return res.status(200).end();
 
+    if (req.method !== 'POST') return res.status(405).json({ msg: '仅支持 POST 请求' });
+
+    const { songId } = req.body;
+    if (!songId) return res.status(400).json({ success: false, msg: '缺少歌曲 ID' });
+
+    // ==========================================
+    // 🔒 安全设计：直接从 Vercel 环境变量中读取你的 Cookie
+    // 这样不用把长长的 Cookie 暴露在公开代码里，更加安全！
+    // ==========================================
     const WYY_COOKIE = process.env.WYY_COOKIE || ""; 
-    const COMMON_HEADERS = {
-        'Cookie': WYY_COOKIE,
-        'Referer': 'https://music.163.com/',
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/110.0.0.0 Safari/537.36'
-    };
 
-    // ==========================================
-    // 1. 【GET 逻辑】音频流云端中转代理通道
-    // ==========================================
-    if (req.method === 'GET') {
-        const { streamId } = req.query;
-        if (!streamId) return res.status(400).end('Missing streamId');
-
-        try {
-            let realAudioUrl = "";
-
-            // 【第一通道】尝试获取高品质/VIP 地址
-            try {
-                const playUrlApi = `https://music.163.com/api/song/enhance/player/url?id=${streamId}&ids=[${streamId}]&br=320000`;
-                const playRes = await axios.get(playUrlApi, { headers: COMMON_HEADERS, timeout: 4000 });
-                const songData = playRes.data?.data?.[0];
-                
-                // 确保链接存在，且不是只有限时试听的 VIP 残缺音频
-                if (songData?.url && !songData?.freeTrialInfo) {
-                    realAudioUrl = songData.url;
-                }
-            } catch (e) {
-                console.error("第一通道解析失败，切换备用通道");
+    try {
+        // 调用移动端高品质接口获取包含你账号 VIP 权限的直链
+        const fallbackUrl = `https://music.163.com/api/song/enhance/player/url?id=${songId}&ids=[${songId}]&br=320000`;
+        const fallbackRes = await axios.get(fallbackUrl, {
+            headers: {
+                'Cookie': WYY_COOKIE,
+                'Referer': 'https://music.163.com/',
+                'User-Agent': 'Mozilla/5.0 (iPhone; CPU iPhone OS 15_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/15.0 Mobile/15E148 Safari/604.1'
             }
+        });
+        
+        let audioUrl = fallbackRes.data?.data?.[0]?.url;
+        let isVip = false;
 
-            // 【第二通道】保底硬核外链（注意：此官方外链严禁改为 https，必须保持 http 才能畅通访问）
-            if (!realAudioUrl) {
-                realAudioUrl = `http://music.163.com/song/media/outer/url?id=${streamId}.mp3`;
-            }
-
-            // 核心：使用 axios 拉取网易云音乐原始流
-            // 注意：maxRedirects: 5 配合 beforeRedirect 可以完美解决网易云 302 重定向丢失 Headers 的防盗链问题
-            const audioStream = await axios({
-                method: 'get',
-                url: realAudioUrl,
-                responseType: 'stream',
-                maxRedirects: 5,
-                headers: COMMON_HEADERS, // 带上完整的伪装头，防止被网易云 CDN 拦截
-                beforeRedirect: (options) => {
-                    // 确保重定向到 126.net 域名时，依然保留网易云的防盗链伪装 Headers
-                    options.headers = COMMON_HEADERS;
-                },
-                timeout: 10000 // 10秒超时控制
-            });
-
-            // 转发音频流响应头
-            res.setHeader('Content-Type', 'audio/mpeg');
-            res.setHeader('Accept-Ranges', 'bytes'); // 允许前端快进/拖动进度条
-            
-            // 将网易云流实时管道式输出给前端
-            audioStream.data.pipe(res);
-        } catch (err) {
-            console.error("流式代理发生错误:", err.message);
-            return res.status(500).end('Audio Stream Proxy Error');
+        // 如果获取到了歌，且带有试听标记（说明这个Cookie失效了或者非VIP看不了完整版），进行通用直连兜底
+        if (!audioUrl || fallbackRes.data?.data?.[0]?.freeTrialInfo) {
+            audioUrl = `https://music.163.com/song/media/outer/url?id=${songId}.mp3`;
+        } else {
+            isVip = true; 
         }
-        return;
-    }
 
-    // ==========================================
-    // 2. 【POST 逻辑】处理歌曲元数据与歌词解析
-    // ==========================================
-    if (req.method === 'POST') {
-        const { songId } = req.body;
-        if (!songId) return res.status(400).json({ success: false, msg: '缺少歌曲 ID' });
-
-        try {
-            // 云端获取歌名与歌手信息
-            const detailUrl = `https://music.163.com/api/v1/song/detail/?id=${songId}&ids=%5B${songId}%5D`;
-            const detailRes = await axios.get(detailUrl, { headers: COMMON_HEADERS }).catch(() => null);
-            let songName = `网易云点播_${songId}`;
-            let artistName = "网易云音乐";
-            
-            if (detailRes?.data?.songs?.[0]) {
-                songName = detailRes.data.songs[0].name;
-                artistName = detailRes.data.songs[0].ar.map(a => a.name).join(', ');
-            }
-
-            // 云端请求歌词
-            const lyricUrl = `https://music.163.com/api/song/lyric?id=${songId}&lv=1&kv=1&tv=-1`;
-            const lyricRes = await axios.get(lyricUrl, { headers: COMMON_HEADERS }).catch(() => null);
-            let lyricText = "";
-
-            if (lyricRes?.data?.lrc?.lyric) {
-                lyricText = lyricRes.data.lrc.lyric;
-            } else if (lyricRes?.data?.uncons) {
-                lyricText = "[00:00.00] 纯音乐，请享受旋律 ~";
-            } else {
-                lyricText = "[00:00.00] 暂无歌词数据";
-            }
-
-            // 动态生成前端访问你当前 API 的 GET 流链接
-            const proxyAudioUrl = `${req.headers['x-forwarded-proto'] || 'https'}://${req.headers.host}/api/parse?streamId=${songId}`;
-
-            return res.status(200).json({
-                success: true,
-                songName: songName,
-                artistName: artistName,
-                audioUrl: proxyAudioUrl, 
-                lyric: lyricText
-            });
-        } catch (error) {
-            return res.status(500).json({ success: false, msg: error.message });
+        // 云端简单模拟一下获取歌名
+        const detailUrl = `https://music.163.com/api/v1/song/detail/?id=${songId}&ids=%5B${songId}%5D`;
+        const detailRes = await axios.get(detailUrl).catch(() => null);
+        let songName = `网易云点播_${songId}`;
+        let artistName = isVip ? "云端高品质通道 (VIP)" : "官方通用直连通道";
+        if (detailRes?.data?.songs?.[0]) {
+            songName = detailRes.data.songs[0].name;
+            artistName = detailRes.data.songs[0].ar.map(a => a.name).join(', ') + (isVip ? " [VIP]" : "");
         }
+
+        return res.status(200).json({
+            success: true,
+            songName: songName,
+            artistName: artistName,
+            audioUrl: audioUrl 
+        });
+    } catch (error) {
+        return res.status(500).json({ success: false, msg: error.message });
     }
 }
