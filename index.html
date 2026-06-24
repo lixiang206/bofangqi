@@ -146,76 +146,33 @@
         .track-item.active .track-dl-icon { color: #fff; opacity: 0.8; }
         .track-item.active .track-dl-icon:hover { opacity: 1; background: rgba(0,0,0,0.15); }
 
-        /* ==================== 核心修改：真昼立牌统一固定在左上角 ==================== */
-        .character-box { 
-            position: fixed !important; 
-            top: -20px !important;      /* 从顶部往下探 */
-            left: 20px !important;      /* 靠在左侧边缘 */
-            right: auto !important;     /* 强行解除原本的右侧定位 */
-            bottom: auto !important;    /* 强行解除原本的底部定位 */
-            width: 180px !important;    /* 电脑端微调人物大小防止太挡视野 */
-            height: 290px !important; 
-            z-index: 999999 !important; /* 维持顶级图层 */
-        }
+        /* 真昼立牌与外链 */
+        .character-box { position: absolute; bottom: -20px; right: 30px; width: 220px; height: 350px; z-index: 20; }
         .mahiru-character { width: 100%; height: 100%; cursor: pointer; transition: all 0.5s ease; background: url('img/lihui.png') no-repeat bottom center; background-size: contain; -webkit-user-drag: none; }
-        .character-box:hover .mahiru-character { transform: translateY(10px); } /* 往下探10px效果 */
+        .character-box:hover .mahiru-character { transform: translateY(-10px); }
+        .dialogue-bubble { position: absolute; bottom: 310px; right: 10px; background: rgba(255, 255, 255, 0.85); backdrop-filter: blur(8px); padding: 10px 16px; border-radius: 16px; font-size: 0.85rem; box-shadow: 0 5px 15px rgba(0,0,0,0.08); opacity: 0; transform: translateY(10px); transition: all 0.4s ease; pointer-events: none; width: 240px; max-height: 80px; overflow: hidden; z-index: 21; text-align: left; line-height: 1.4; }
+        .dialogue-bubble::after { content: ''; position: absolute; bottom: -8px; right: 40px; border-width: 8px 8px 0; border-style: solid; border-color: rgba(255, 255, 255, 0.85) transparent; }
+        .character-box:hover .dialogue-bubble { opacity: 1; transform: translateY(0); }
 
-        /* 对话气泡重构：放到真昼的下方偏右侧，并且朝向左上角人物 */
-        .dialogue-bubble { 
-            position: absolute !important; 
-            top: 250px !important;       /* 置于立牌正下方 */
-            left: 20px !important;       /* 靠左定位 */
-            right: auto !important; 
-            bottom: auto !important;
-            background: rgba(255, 255, 255, 0.85); 
-            backdrop-filter: blur(8px); 
-            padding: 10px 16px; 
-            border-radius: 16px; 
-            font-size: 0.85rem; 
-            box-shadow: 0 5px 15px rgba(0,0,0,0.08); 
-            opacity: 0; 
-            transform: translateY(-10px); 
-            transition: all 0.4s ease; 
-            pointer-events: none; 
-            width: 220px; 
-            max-height: 80px; 
-            overflow: hidden; 
-            z-index: 1000000 !important; 
-            text-align: left; 
-            line-height: 1.4; 
-        }
-        /* 修改气泡三角指针：使其向上指着真昼 */
-        .dialogue-bubble::after { 
-            content: '' !important; 
-            position: absolute !important; 
-            top: -8px !important;        /* 移到气泡顶部 */
-            bottom: auto !important;
-            left: 40px !important;       /* 靠左边指向真昼 */
-            right: auto !important;
-            border-width: 0 8px 8px !important; /* 变成向上箭头 */
-            border-style: solid !important; 
-            border-color: transparent transparent rgba(255, 255, 255, 0.85) !important; 
-        }
-        .character-box:hover .dialogue-bubble { opacity: 1 !important; transform: translateY(0) !important; }
-
+        /* 已经修改：将按钮改为固定在网页左上角 */
         .mahiru-link-btn { 
-            position: absolute !important; 
-            top: 40px !important; 
-            left: auto !important;
-            right: -25px !important;    /* 挪到右边展示 */
-            width: 44px !important; 
-            height: 44px !important; 
+            position: fixed; 
+            top: 20px; 
+            left: 20px; 
+            width: 54px; 
+            height: 54px; 
+            border-radius: 50%; 
             border: 3px solid #fff; 
             box-shadow: 0 4px 12px rgba(90, 75, 65, 0.25); 
             background: url('img/changpian.jpg') no-repeat center; 
             background-size: cover; 
             cursor: pointer; 
             transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); 
-            z-index: 22; 
+            z-index: 9999; /* 极高层级，防止被遮挡 */
             animation: buttonPulse 2s infinite ease-in-out; 
         }
         .mahiru-link-btn:hover { transform: scale(1.15) rotate(20deg); box-shadow: 0 6px 16px rgba(230, 197, 148, 0.6); border-color: var(--accent-gold); }
-        .link-tooltip { position: absolute; top: -35px; left: 50%; transform: translateX(-50%); background: rgba(90, 75, 65, 0.9); color: #fff; padding: 4px 8px; border-radius: 6px; font-size: 0.75rem; white-space: nowrap; opacity: 0; transition: opacity 0.2s; pointer-events: none; }
+        .link-tooltip { position: absolute; top: 65px; left: 50%; transform: translateX(-50%); background: rgba(90, 75, 65, 0.9); color: #fff; padding: 4px 8px; border-radius: 6px; font-size: 0.75rem; white-space: nowrap; opacity: 0; transition: opacity 0.2s; pointer-events: none; }
         .mahiru-link-btn:hover .link-tooltip { opacity: 1; }
 
         @keyframes buttonPulse {
@@ -224,52 +181,22 @@
             100% { box-shadow: 0 0 0 0 rgba(255, 255, 255, 0); }
         }
 
-        /* 移动端/手机端高级响应式覆盖 */
+        /* 移动端高级适配 */
         @media (max-width: 768px) {
             .bg-layer { background: url('img/xiaoermo.jpg') no-repeat center center; background-size: cover !important; }
             .main-wrapper { flex-direction: column; justify-content: flex-start; align-items: center; gap: 25px; padding: 25px 15px 140px; }
             .player-container, .playlist-container { width: 100%; max-width: 340px; box-sizing: border-box; }
             .playlist-container { height: 320px; }
-            
-            /* 手机端也强制在左上角 */
-            .character-box { 
-                position: fixed !important; 
-                top: 0px !important; 
-                left: 10px !important; 
-                right: auto !important;
-                bottom: auto !important;
-                width: 80px !important; 
-                height: 130px !important; 
-                opacity: 0.95; 
-                pointer-events: auto; 
-            }
+            .character-box { position: fixed !important; width: 90px; height: 145px; right: 10px; bottom: 10px; opacity: 0.95; z-index: 999999 !important; pointer-events: auto; }
+            .mahiru-character { background-size: contain; }
             .character-box:hover .mahiru-character { transform: none !important; }
+            .dialogue-bubble { position: fixed !important; bottom: 155px; right: 10px; font-size: 0.75rem; padding: 6px 12px; z-index: 1000000 !important; transform: translateY(0) !important; width: 160px; max-height: 65px; opacity: 1 !important; pointer-events: none; }
+            .dialogue-bubble::after { right: 25px; }
             
-            /* 手机端的台词气泡随之定位到左上角立牌下方 */
-            .dialogue-bubble { 
-                position: fixed !important; 
-                top: 120px !important; 
-                left: 10px !important; 
-                right: auto !important;
-                bottom: auto !important;
-                font-size: 0.75rem; 
-                padding: 6px 12px; 
-                transform: translateY(0) !important; 
-                width: 150px; 
-                max-height: 65px; 
-                opacity: 1 !important; 
-                pointer-events: none; 
-            }
-            .dialogue-bubble::after { 
-                top: -6px !important;
-                bottom: auto !important;
-                left: 25px !important; 
-                right: auto !important;
-                border-width: 0 6px 6px !important;
-                border-color: transparent transparent rgba(255, 255, 255, 0.85) !important;
-            }
-            .mahiru-link-btn { top: 25px !important; right: -15px !important; width: 32px !important; height: 32px !important; }
-            
+            /* 已经修改：手机移动端同样适配左上角 */
+            .mahiru-link-btn { top: 15px; left: 15px; width: 42px; height: 42px; }
+            .mahiru-link-btn .link-tooltip { top: 50px; }
+
             #mobileTouchUnlock { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; height: 100dvh; background: rgba(90, 75, 65, 0.4); backdrop-filter: blur(4px); -webkit-backdrop-filter: blur(4px); z-index: 99999; display: flex; justify-content: center; align-items: center; color: #5A4B41; font-weight: bold; }
             .unlock-box { background: rgba(255, 255, 255, 0.95); padding: 25px 30px; border-radius: 20px; text-align: center; box-shadow: 0 10px 25px rgba(0,0,0,0.15); border: 2px solid var(--mahiru-gold); }
             .unlock-box button { background: #A79284; color: white; border: none; padding: 10px 24px; border-radius: 50px; font-size: 0.9rem; cursor: pointer; }
@@ -278,6 +205,10 @@
     </style>
 </head>
 <body>
+
+    <div class="mahiru-link-btn" onclick="window.open('https://www.fsdm02.com/vodplay/WNsJJJJk-1-1.html', '_blank')" title="前往播放页">
+        <div class="link-tooltip">去看真昼吧~</div>
+    </div>
 
     <div class="bg-layer"></div>
     <canvas id="sakura-canvas"></canvas>
@@ -335,9 +266,6 @@
     </div>
 
     <div class="character-box" id="characterBox">
-        <div class="mahiru-link-btn" onclick="window.open('https://www.fsdm02.com/vodplay/WNsJJJJk-1-1.html', '_blank')" title="前往播放页">
-            <div class="link-tooltip">去看真昼吧~</div>
-        </div>
         <div class="mahiru-character" id="mahiruSkin"></div>
         <div class="dialogue-bubble" id="bubble">今天想听什么歌呢？</div>
     </div>
@@ -379,6 +307,7 @@
         let playMode = 'loop'; 
         let currentPlayingInfo = { name: "", url: "" };
 
+        // ==================== [高级扩展状态变量] ====================
         let currentLyrics = []; 
         let listenTime = parseInt(localStorage.getItem('mahiru_listen_time')) || 0; 
         let mahiruLevel = parseInt(localStorage.getItem('mahiru_level')) || 1;
@@ -389,6 +318,7 @@
             return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) || window.innerWidth <= 768;
         }
 
+        // ==================== [功能 7：时间系统 (根据时间动态问候)] ====================
         function getMahiruGreeting() {
             const hour = new Date().getHours();
             if (hour >= 5 && hour < 9) return "早上好，早餐已经准备好了哦，今天也要精神满满呢。";
@@ -442,6 +372,7 @@
             }
         }
 
+        // ==================== [功能 8：好感度养成系统 & 点击互动] ====================
         function initBondSystem() {
             setInterval(() => {
                 if (audio && !audio.paused) {
@@ -475,6 +406,7 @@
             });
         }
 
+        // ==================== [功能 1：歌词原生解析与时间轴步进] ====================
         function parseLyric(lrcText) {
             const lines = lrcText.split('\n');
             const result = [];
@@ -510,6 +442,7 @@
             }
         });
 
+        // ==================== [功能 3：Web Audio 频谱绘图逻辑] ====================
         function initVisualizer() {
             if (audioCtx) return; 
             canvas = document.getElementById('visualizer');
@@ -559,6 +492,7 @@
             }
         }
 
+        // ==================== [基础多标签列表渲染] ====================
         tabMahiru.addEventListener('click', () => {
             if(currentMode === 'mahiru') return; currentMode = 'mahiru';
             tabMahiru.classList.add('active'); tabOnline.classList.remove('active'); tabLocal.classList.remove('active');
@@ -645,7 +579,7 @@
 
         async function loadSong(index, autoPlay = false) {
             const activeList = getActiveList(); if (activeList.length === 0) return;
-            currentIndex = index; currentLyrics = []; 
+            currentIndex = index; currentLyrics = []; // 切歌重置歌词
             if (currentMode === 'local') {
                 const fileHandle = activeList[currentIndex]; const file = await fileHandle.getFile();
                 audio.src = URL.createObjectURL(file); songTitle.innerText = file.name.replace(/\.[^/.]+$/, ""); songArtist.innerText = "本地音乐";
@@ -708,6 +642,7 @@
         });
 
         window.addEventListener('keydown', (e) => {
+            if (document.activeElement === wyyIdInput) return;
             if (e.code === 'Space' || e.keyCode === 32) { e.preventDefault(); if (audio.paused) { playAudio(); } else { pauseAudio(); } }
         });
 
@@ -716,6 +651,43 @@
         audio.addEventListener('loadedmetadata', () => { totalTimeUI.innerText = formatTime(audio.duration); });
         progressBarContainer.addEventListener('click', (e) => { if (isNaN(audio.duration)) return; audio.currentTime = (e.offsetX / progressBarContainer.clientWidth) * audio.duration; });
 
+        // ==================== [网易云在线点播数据解析对接] ====================
+        wyyDlBtn.addEventListener('click', async () => {
+            const songId = wyyIdInput.value.trim();
+            if (!songId || !/^\d+$/.test(songId)) { showBubbleWithTimer("しいなまひる:请输入纯数字的歌曲 ID 呢。"); return; }
+            showBubbleWithTimer("しいなまひる:正在为您向云端请求解析，请稍候...");
+            wyyDlBtn.innerText = "解析中..."; wyyDlBtn.disabled = true;
+            try {
+                const response = await fetch(`${VERCEL_URL}/api/parse`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ songId: songId })
+                });
+                if (!response.ok) throw new Error("接口返回异常");
+                const data = await response.json();
+                if (data.success) {
+                    showBubbleWithTimer(`❀ しいなまひる:成功解析并载入歌词！正在为您播放《${data.songName}》❀`);
+                    audio.src = data.audioUrl;
+                    songTitle.innerText = data.songName;
+                    songArtist.innerText = data.artistName || "网易云在线点播";
+                    
+                    currentPlayingInfo = { name: data.songName, url: data.audioUrl };
+
+                    // 💡 重点：把后端带回来的云端 lyric 扔进前端的高级解析器中
+                    if (data.lyric) {
+                        currentLyrics = parseLyric(data.lyric);
+                    } else {
+                        currentLyrics = [];
+                    }
+
+                    playAudio();
+                    wyyIdInput.value = '';
+                } else { showBubbleWithTimer("しいなまひる:点播失败：" + data.msg); }
+            } catch (err) { showBubbleWithTimer("しいなまひる:无法连接到云端 service，请确认 Vercel 后端部署状态？"); } 
+            finally { wyyDlBtn.innerText = "直接播放"; wyyDlBtn.disabled = false; }
+        });
+
+        /* ================= 音频下载分流控制 ================= */
         async function handleAudioDownload(songItem) {
             if (!songItem || !songItem.url) return;
             const fileName = songItem.name + ".mp3";
@@ -765,6 +737,7 @@
                 });
         }
 
+        /* ================= 樱花全屏飘落特效 Canvas 渲染引擎 ================= */
         const sakuraCanvas = document.getElementById('sakura-canvas');
         const sCtx = sakuraCanvas.getContext('2d');
         let sakuraList = [];
@@ -811,6 +784,7 @@
         }
         drawSakuraFrame();
 
+        /* ================= Media Session 后台/锁屏联动 ================= */
         function updateMediaSession() {
             if ('mediaSession' in navigator) {
                 navigator.mediaSession.metadata = new MediaMetadata({
@@ -825,11 +799,15 @@
             }
         }
 
+        // ==================== [页面初次加载挂载环境] ====================
         window.addEventListener('DOMContentLoaded', () => {
             initOnlinePlaylist();
             initBondSystem();
+            
+            // 弹出时间系统问候语
             showBubbleWithTimer(getMahiruGreeting(), 5000);
 
+            // ==================== [功能 4：向浏览器异步注册 PWA 运行环境] ====================
             if ('serviceWorker' in navigator) {
                 navigator.serviceWorker.register('./sw.js')
                     .then(() => console.log('PWA 运行环境就绪'))
