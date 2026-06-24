@@ -13,7 +13,7 @@
             --accent-gold: #E6C594;
         }
 
-        /* 锁死根节点，防止任何形式的滚动溢出白边 */
+        /* 核心修复：彻底锁死根节点，防止任何形式的滚动溢出白边 */
         html, body {
             margin: 0; padding: 0;
             width: 100%; height: 100%;
@@ -24,7 +24,7 @@
             color: var(--text-color);
         }
 
-        /* 独立背景层，与内容分离，100%全屏覆盖 */
+        /* 新增：独立背景层，与内容分离，100%全屏覆盖 */
         .bg-layer {
             position: fixed; top: 0; left: 0;
             width: 100vw; height: 100vh; height: 100dvh;
@@ -33,11 +33,23 @@
             z-index: 1;
         }
 
-        /* 全屏樱花飘落画布 */
-        #sakura-canvas {
-            position: fixed; top: 0; left: 0;
-            width: 100vw; height: 100vh; height: 100dvh;
-            pointer-events: none; z-index: 2;
+        .decorations {
+            position: fixed; width: 100vw; height: 100vh; height: 100dvh; top: 0; left: 0;
+            pointer-events: none; z-index: 10000000 !important; 
+        }
+
+        .petal {
+            position: absolute; background: linear-gradient(135deg, #FFC0CB, #F5E6CC); 
+            opacity: 0.92 !important; border-radius: 50% 0 50% 50%;
+            animation: float linear infinite; transform-origin: center;
+            box-shadow: 1px 1px 3px rgba(90, 75, 65, 0.15);
+        }
+
+        @keyframes float {
+            0% { transform: translateY(-50px) translateX(0) rotate(0deg) scale(var(--petal-scale, 1)); opacity: 0; }
+            10% { opacity: 0.92; }
+            90% { opacity: 0.92; }
+            100% { transform: translateY(105vh) translateX(180px) rotate(450deg) scale(var(--petal-scale, 1)); opacity: 0; }
         }
 
         /* 核心重构内容容器 */
@@ -45,7 +57,7 @@
             position: absolute; top: 0; left: 0;
             width: 100%; height: 100%;
             display: flex; justify-content: center; align-items: center;
-            gap: 30px; z-index: 3; box-sizing: border-box;
+            gap: 30px; z-index: 2; box-sizing: border-box;
             overflow-x: hidden; overflow-y: auto; 
             -webkit-overflow-scrolling: touch;
             padding: 40px 20px;
@@ -95,6 +107,7 @@
         .controls button { background: var(--text-color); color: #fff; border: none; cursor: pointer; transition: all 0.2s ease; box-shadow: 0 4px 10px rgba(90, 75, 65, 0.2); }
         .btn-main { padding: 12px 22px; font-size: 1rem; border-radius: 50px; }
         .btn-side { padding: 10px 14px; font-size: 0.9rem; border-radius: 50%; }
+        /* 模式与新按钮小修饰 */
         .btn-mode, .btn-current-dl { padding: 10px 12px; font-size: 0.85rem; border-radius: 50%; background: #A79284 !important; }
         .controls button:hover { transform: scale(1.08); background: #7A695E; }
 
@@ -146,32 +159,16 @@
         .track-item.active .track-dl-icon:hover { opacity: 1; background: rgba(0,0,0,0.15); }
 
         /* 真昼立牌与外链 */
-        .character-box { position: absolute; bottom: -20px; right: 30px; width: 220px; height: 350px; z-index: 20; }
-        .mahiru-character { width: 100%; height: 100%; cursor: pointer; transition: all 0.5s ease; background: url('img/lihui.png') no-repeat bottom center; background-size: contain; -webkit-user-drag: none; }
+        .character-box { position: absolute; bottom: -20px; right: 30px; width: 220px; height: 350px; z-index: 3; }
+        .mahiru-character { width: 100%; height: 100%; cursor: pointer; transition: all 0.5s ease; background: url('img/lihui.png') no-repeat bottom center; background-size: contain; }
         .character-box:hover .mahiru-character { transform: translateY(-10px); }
-        .dialogue-bubble { position: absolute; bottom: 310px; right: 10px; background: rgba(255, 255, 255, 0.85); backdrop-filter: blur(8px); padding: 10px 16px; border-radius: 16px; font-size: 0.85rem; box-shadow: 0 5px 15px rgba(0,0,0,0.08); opacity: 0; transform: translateY(10px); transition: all 0.4s ease; pointer-events: none; width: 240px; max-height: 80px; overflow: hidden; z-index: 21; text-align: left; line-height: 1.4; }
+        .dialogue-bubble { position: absolute; bottom: 310px; right: 10px; background: rgba(255, 255, 255, 0.85); backdrop-filter: blur(8px); padding: 10px 16px; border-radius: 16px; font-size: 0.85rem; box-shadow: 0 5px 15px rgba(0,0,0,0.08); opacity: 0; transform: translateY(10px); transition: all 0.4s ease; pointer-events: none; white-space: nowrap; z-index: 4; }
         .dialogue-bubble::after { content: ''; position: absolute; bottom: -8px; right: 40px; border-width: 8px 8px 0; border-style: solid; border-color: rgba(255, 255, 255, 0.85) transparent; }
         .character-box:hover .dialogue-bubble { opacity: 1; transform: translateY(0); }
 
-        /* 锁死固定在屏幕左上角 */
-        .mahiru-link-btn { 
-            position: fixed; 
-            top: 20px; 
-            left: 20px; 
-            width: 54px; 
-            height: 54px; 
-            border-radius: 50%; 
-            border: 3px solid #fff; 
-            box-shadow: 0 4px 12px rgba(90, 75, 65, 0.25); 
-            background: url('img/changpian.jpg') no-repeat center; 
-            background-size: cover; 
-            cursor: pointer; 
-            transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); 
-            z-index: 9999; 
-            animation: buttonPulse 2s infinite ease-in-out; 
-        }
+        .mahiru-link-btn { position: absolute; top: 10px; left: -60px; width: 54px; height: 54px; border-radius: 50%; border: 3px solid #fff; box-shadow: 0 4px 12px rgba(90, 75, 65, 0.25); background: url('img/changpian.jpg') no-repeat center; background-size: cover; cursor: pointer; transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); z-index: 5; animation: buttonPulse 2s infinite ease-in-out; }
         .mahiru-link-btn:hover { transform: scale(1.15) rotate(20deg); box-shadow: 0 6px 16px rgba(230, 197, 148, 0.6); border-color: var(--accent-gold); }
-        .link-tooltip { position: absolute; top: 65px; left: 50%; transform: translateX(-50%); background: rgba(90, 75, 65, 0.9); color: #fff; padding: 4px 8px; border-radius: 6px; font-size: 0.75rem; white-space: nowrap; opacity: 0; transition: opacity 0.2s; pointer-events: none; }
+        .link-tooltip { position: absolute; top: -35px; left: 50%; transform: translateX(-50%); background: rgba(90, 75, 65, 0.9); color: #fff; padding: 4px 8px; border-radius: 6px; font-size: 0.75rem; white-space: nowrap; opacity: 0; transition: opacity 0.2s; pointer-events: none; }
         .mahiru-link-btn:hover .link-tooltip { opacity: 1; }
 
         @keyframes buttonPulse {
@@ -189,13 +186,9 @@
             .character-box { position: fixed !important; width: 90px; height: 145px; right: 10px; bottom: 10px; opacity: 0.95; z-index: 999999 !important; pointer-events: auto; }
             .mahiru-character { background-size: contain; }
             .character-box:hover .mahiru-character { transform: none !important; }
-            .dialogue-bubble { position: fixed !important; bottom: 155px; right: 10px; font-size: 0.75rem; padding: 6px 12px; z-index: 1000000 !important; transform: translateY(0) !important; width: 160px; max-height: 65px; opacity: 1 !important; pointer-events: none; }
+            .dialogue-bubble { position: fixed !important; bottom: 155px; right: 10px; font-size: 0.75rem; padding: 6px 12px; z-index: 1000000 !important; transform: translateY(0) !important; }
             .dialogue-bubble::after { right: 25px; }
-            
-            /* 手机移动端同样适配左上角 */
-            .mahiru-link-btn { top: 15px; left: 15px; width: 42px; height: 42px; }
-            .mahiru-link-btn .link-tooltip { top: 50px; }
-
+            .mahiru-link-btn { top: -50px; left: 20px; width: 40px; height: 40px; }
             #mobileTouchUnlock { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; height: 100dvh; background: rgba(90, 75, 65, 0.4); backdrop-filter: blur(4px); -webkit-backdrop-filter: blur(4px); z-index: 99999; display: flex; justify-content: center; align-items: center; color: #5A4B41; font-weight: bold; }
             .unlock-box { background: rgba(255, 255, 255, 0.95); padding: 25px 30px; border-radius: 20px; text-align: center; box-shadow: 0 10px 25px rgba(0,0,0,0.15); border: 2px solid var(--mahiru-gold); }
             .unlock-box button { background: #A79284; color: white; border: none; padding: 10px 24px; border-radius: 50px; font-size: 0.9rem; cursor: pointer; }
@@ -205,26 +198,22 @@
 </head>
 <body>
 
-    <div class="mahiru-link-btn" onclick="window.open('https://www.fsdm02.com/vodplay/WNsJJJJk-1-1.html', '_blank')" title="前往播放页">
-        <div class="link-tooltip">去看真昼吧~</div>
-    </div>
-
     <div class="bg-layer"></div>
-    <canvas id="sakura-canvas"></canvas>
 
     <div id="mobileTouchUnlock">
         <div class="unlock-box">
-            <p>❀ 欢迎来到しいなまひる的音乐盒 ❀<br><small style="color:#888; font-weight:normal;">点击下方按钮解锁手机端音频</small></p>
+            <p>❀ 欢迎来到しいなまひ还原的音乐盒 ❀<br><small style="color:#888; font-weight:normal;">点击下方按钮解锁手机端音频</small></p>
             <button id="unlockBtn">进入音乐盒</button>
         </div>
     </div>
 
+    <div class="decorations" id="decorations"></div>
+
     <div class="main-wrapper">
         <div class="player-container">
             <div class="disc-area">
-                <canvas id="visualizer" width="200" height="200" style="position:absolute; top:0; left:0; z-index:1; pointer-events:none;"></canvas>
                 <div class="tonearm" id="tonearm"></div>
-                <div class="disc" id="disc" style="position:relative; z-index:2;"><div class="disc-cover"></div></div>
+                <div class="disc" id="disc"><div class="disc-cover"></div></div>
             </div>
 
             <div class="song-title" id="songTitle">正在加载歌单...</div>
@@ -265,20 +254,23 @@
     </div>
 
     <div class="character-box" id="characterBox">
+        <div class="mahiru-link-btn" onclick="window.open('https://www.fsdm02.com/vodplay/WNsJJJJk-1-1.html', '_blank')" title="前往播放页">
+            <div class="link-tooltip">去看真昼吧~</div>
+        </div>
         <div class="mahiru-character" id="mahiruSkin"></div>
         <div class="dialogue-bubble" id="bubble">今天想听什么歌呢？</div>
     </div>
 
     <script>
         const VERCEL_URL = window.location.origin; 
+
         const supabaseBaseUrl = "https://dqfnxybsrbheeatzxxjg.supabase.co/storage/v1/object/public/music/";
-        
         const audio = document.getElementById('myAudio');
         const playBtn = document.getElementById('playBtn');
         const prevBtn = document.getElementById('prevBtn');
         const nextBtn = document.getElementById('nextBtn');
         const modeBtn = document.getElementById('modeBtn');
-        const currentDlBtn = document.getElementById('currentDlBtn');
+        const currentDlBtn = document.getElementById('currentDlBtn'); // 新增变量
         const selectFolderBtn = document.getElementById('selectFolderBtn');
         const disc = document.getElementById('disc');
         const tonearm = document.getElementById('tonearm');
@@ -299,46 +291,23 @@
         const onlineCountUI = document.getElementById('onlineCount');
         const localCountUI = document.getElementById('localCount');
 
+        let currentMode = 'mahiru', mahiruSongs = [], onlineSongs = [], localSongs = [], currentIndex = 0;        
         const mobileTouchUnlock = document.getElementById('mobileTouchUnlock');
         const unlockBtn = document.getElementById('unlockBtn');
-
-        let currentMode = 'mahiru', mahiruSongs = [], onlineSongs = [], localSongs = [], currentIndex = 0;        
+        
         let playMode = 'loop'; 
-        let currentPlayingInfo = { name: "", url: "" };
 
-        let currentLyrics = []; 
-        let listenTime = parseInt(localStorage.getItem('mahiru_listen_time')) || 0; 
-        let mahiruLevel = parseInt(localStorage.getItem('mahiru_level')) || 1;
-        let bubbleTimer = null;
-        let audioCtx, analyser, source, canvas, ctx, bufferLength, dataArray;
+        // 全局状态跟踪当前播放的歌曲信息（包含网易云外链）
+        let currentPlayingInfo = { name: "", url: "" };
 
         function isMobileDevice() {
             return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) || window.innerWidth <= 768;
         }
 
-        function getMahiruGreeting() {
-            const hour = new Date().getHours();
-            if (hour >= 5 && hour < 9) return "早上好，早餐已经准备好了哦，今天也要精神满满呢。";
-            if (hour >= 9 && hour < 12) return "上午好~ 有好好的在专心工作或学习吗？";
-            if (hour >= 12 && hour < 14) return "午休时间到了，先吃个午饭，再听两首舒缓的歌吧。";
-            if (hour >= 14 && hour < 18) return "下午茶时间，要来一杯红茶，配上点心吗？";
-            if (hour >= 18 && hour < 23) return "辛苦了一天，欢迎回来。今晚想听什么旋律呢？";
-            return "已经很晚很晚了哦，听完这首歌就早点睡吧，熬夜真不是好习惯呢。";
-        }
-
-        function showBubbleWithTimer(text, duration = 4000) {
-            if (bubbleTimer) clearTimeout(bubbleTimer);
-            bubble.innerText = text;
-            bubble.style.opacity = '1';
-            bubbleTimer = setTimeout(() => {
-                if (bubble.dataset.isClicking !== "true") bubble.style.opacity = '0';
-            }, duration);
-        }
-
         function unlockMobileAudio() {
             audio.play().then(() => { audio.pause(); }).catch(e => console.log('激活中...'));
             mobileTouchUnlock.style.display = 'none';
-            showBubbleWithTimer(getMahiruGreeting(), 5000);
+            showBubbleWithTimer("今天想听什么歌呢？");
             updateMediaSession(); 
         }
         unlockBtn.addEventListener('click', unlockMobileAudio);
@@ -369,141 +338,37 @@
             }
         }
 
-        function initBondSystem() {
-            setInterval(() => {
-                if (audio && !audio.paused) {
-                    listenTime += 1;
-                    localStorage.setItem('mahiru_listen_time', listenTime);
-                    
-                    const newLevel = Math.floor(listenTime / 60) + 1;
-                    if (newLevel > mahiruLevel) {
-                        mahiruLevel = newLevel;
-                        localStorage.setItem('mahiru_level', mahiruLevel);
-                        showBubbleWithTimer(`❀ 羁绊提升！真昼与你的好感度达到了 Lv.${mahiruLevel} ❀`, 5000);
-                    }
-                }
-            }, 1000);
-
-            mahiruSkin.addEventListener('click', () => {
-                bubble.dataset.isClicking = "true"; 
-                let dialoguePool = [
-                    "别突然戳我呀...",
-                    "听音乐的时候要保持好心情哦。",
-                    "这首歌，我也很喜欢呢。"
-                ];
-                if (mahiruLevel >= 3) dialoguePool.push(`我们已经相伴听歌 ${Math.floor(listenTime/60)} 分钟了，真希望时间走得慢一点...`);
-                if (mahiruLevel >= 5) {
-                    dialoguePool.push("哪怕全世界都不站在你这边，我也一定会陪在你的身边。");
-                    dialoguePool.push("（真昼悄悄看着你，脸上多了一抹红晕...）");
-                }
-                const randomText = dialoguePool[Math.floor(Math.random() * dialoguePool.length)];
-                showBubbleWithTimer(randomText, 4000);
-                setTimeout(() => { bubble.dataset.isClicking = "false"; }, 4000);
-            });
-        }
-
-        function parseLyric(lrcText) {
-            const lines = lrcText.split('\n');
-            const result = [];
-            const timeReg = /\[(\d+):(\d+)\.(\d+)\]/;
-            lines.forEach(line => {
-                const match = timeReg.exec(line);
-                if (match) {
-                    const minutes = parseInt(match[1]);
-                    const seconds = parseInt(match[2]);
-                    const ms = parseInt(match[3]);
-                    const time = minutes * 60 + seconds + (ms / 1000);
-                    const text = line.replace(timeReg, '').trim();
-                    if (text) result.push({ time, text });
-                }
-            });
-            return result.sort((a, b) => a.time - b.time);
-        }
-
-        audio.addEventListener('timeupdate', () => {
-            if (currentLyrics.length === 0 || bubble.dataset.isClicking === "true") return;
-            const currentTime = audio.currentTime;
-            let activeLyric = "";
-            for (let i = 0; i < currentLyrics.length; i++) {
-                if (currentTime >= currentLyrics[i].time) {
-                    activeLyric = currentLyrics[i].text;
-                } else {
-                    break;
-                }
-            }
-            if (activeLyric) {
-                bubble.innerText = "♪ " + activeLyric;
-                bubble.style.opacity = '1';
-            }
-        });
-
-        function initVisualizer() {
-            if (audioCtx) return; 
-            canvas = document.getElementById('visualizer');
-            ctx = canvas.getContext('2d');
-            audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-            analyser = audioCtx.createAnalyser();
-            
-            audio.crossOrigin = "anonymous"; 
-            source = audioCtx.createMediaElementSource(audio);
-            source.connect(analyser);
-            analyser.connect(audioCtx.destination);
-            
-            analyser.fftSize = 64; 
-            bufferLength = analyser.frequencyBinCount;
-            dataArray = new Uint8Array(bufferLength);
-            drawVisualizer();
-        }
-
-        function drawVisualizer() {
-            requestAnimationFrame(drawVisualizer);
-            if (!analyser) return;
-            analyser.getByteFrequencyData(dataArray);
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
-            
-            const centerX = canvas.width / 2;
-            const centerY = canvas.height / 2;
-            const radius = 95; 
-            
-            ctx.strokeStyle = 'rgba(230, 197, 148, 0.8)'; 
-            ctx.lineWidth = 2;
-            
-            for (let i = 0; i < bufferLength; i++) {
-                const value = dataArray[i];
-                const percent = value / 255;
-                const length = percent * 25; 
-                
-                const angle = (i / bufferLength) * Math.PI * 2;
-                const x1 = centerX + Math.cos(angle) * radius;
-                const y1 = centerY + Math.sin(angle) * radius;
-                const x2 = centerX + Math.cos(angle) * (radius + length);
-                const y2 = centerY + Math.sin(angle) * (radius + length);
-                
-                ctx.beginPath();
-                ctx.moveTo(x1, y1);
-                ctx.lineTo(x2, y2);
-                ctx.stroke();
+        function createDecorations() {
+            const container = document.getElementById('decorations'); if (!container) return;
+            for (let i = 0; i < 55; i++) {
+                const petal = document.createElement('div'); petal.className = 'petal';
+                petal.style.left = Math.random() * 100 + 'vw'; petal.style.top = Math.random() * -60 + 'px';
+                const size = Math.random() * 8 + 7; petal.style.width = size + 'px'; petal.style.height = size + 'px';
+                petal.style.animationDelay = Math.random() * 15 + 's'; petal.style.animationDuration = Math.random() * 8 + 7 + 's';
+                petal.style.setProperty('--petal-scale', (Math.random() * 0.4 + 0.9).toFixed(2));
+                container.appendChild(petal);
             }
         }
+        createDecorations();
 
         tabMahiru.addEventListener('click', () => {
             if(currentMode === 'mahiru') return; currentMode = 'mahiru';
             tabMahiru.classList.add('active'); tabOnline.classList.remove('active'); tabLocal.classList.remove('active');
-            renderPlaylist(); currentLyrics = [];
+            renderPlaylist(); 
             if(mahiruSongs.length > 0) { loadSong(0, false); } else { trackListUI.innerHTML = `<li style="color: #5A4B41; text-align: center; padding-top: 50px; opacity: 0.6;">真昼歌单里空空如也哦</li>`; pauseAudio(); }
         });
 
         tabOnline.addEventListener('click', () => {
             if(currentMode === 'online') return; currentMode = 'online';
             tabOnline.classList.add('active'); tabMahiru.classList.remove('active'); tabLocal.classList.remove('active');
-            renderPlaylist(); currentLyrics = [];
+            renderPlaylist(); 
             if(onlineSongs.length > 0) { loadSong(0, false); } else { trackListUI.innerHTML = `<li style="color: #5A4B41; text-align: center; padding-top: 50px; opacity: 0.6;">内置歌单空空如也哦</li>`; pauseAudio(); }
         });
 
         tabLocal.addEventListener('click', () => {
             if(currentMode === 'local') return; currentMode = 'local';
             tabLocal.classList.add('active'); tabMahiru.classList.remove('active'); tabOnline.classList.remove('active');
-            renderPlaylist(); currentLyrics = [];
+            renderPlaylist();
             if(localSongs.length > 0) { loadSong(0, false); } else {
                 trackListUI.innerHTML = `<li style="color: #5A4B41; text-align: center; padding-top: 50px; opacity: 0.6;">请点击左下方按钮载入本地音乐</li>`;
                 pauseAudio();
@@ -512,7 +377,7 @@
 
         selectFolderBtn.addEventListener('click', async () => {
             try {
-                if (!window.showDirectoryPicker) { alert('当前浏览器不支持此 API，请使用 PC 端 Chrome / Edge 浏览器操作本地导入。'); return; }
+                if (!window.showDirectoryPicker) { alert('当前浏览器不支持此 API，请使用 PC 端的 Chrome / Edge 浏览器操作本地导入。'); return; }
                 const dirHandle = await window.showDirectoryPicker(); localSongs = [];
                 for await (const entry of dirHandle.values()) { if (entry.kind === 'file' && /\.(mp3|wav|ogg|flac)$/i.test(entry.name)) localSongs.push(entry); }
                 if (localSongs.length === 0) { alert('该文件夹下没有找到音乐格式文件！'); return; }
@@ -537,6 +402,7 @@
             activeList.forEach((item, index) => {
                 const li = document.createElement('li'); 
                 li.className = 'track-item';
+                
                 const displayName = (currentMode === 'local') ? item.name.replace(/\.[^/.]+$/, "") : item.name;
                 
                 const nameSpan = document.createElement('span');
@@ -547,6 +413,7 @@
                     if(e.target.classList.contains('track-dl-icon')) return; 
                     loadSong(index, true); 
                 });
+                
                 li.appendChild(nameSpan);
 
                 if (currentMode !== 'local') {
@@ -554,12 +421,14 @@
                     dlIcon.className = 'track-dl-icon';
                     dlIcon.innerHTML = '📥';
                     dlIcon.title = '下载这首音频';
+                    
                     dlIcon.addEventListener('click', (e) => {
                         e.stopPropagation(); 
                         handleAudioDownload(item);
                     });
                     li.appendChild(dlIcon);
                 }
+                
                 trackListUI.appendChild(li);
             });
             updateActiveHighlight();
@@ -572,33 +441,24 @@
 
         async function loadSong(index, autoPlay = false) {
             const activeList = getActiveList(); if (activeList.length === 0) return;
-            currentIndex = index; currentLyrics = []; 
+            currentIndex = index;
             if (currentMode === 'local') {
                 const fileHandle = activeList[currentIndex]; const file = await fileHandle.getFile();
                 audio.src = URL.createObjectURL(file); songTitle.innerText = file.name.replace(/\.[^/.]+$/, ""); songArtist.innerText = "本地音乐";
-                currentPlayingInfo = { name: songTitle.innerText, url: "" };
+                currentPlayingInfo = { name: songTitle.innerText, url: "" }; // 本地音乐不提供下载流
             } else {
-                const song = activeList[currentIndex]; 
-                
-                // 核心：如果是网易云代理流链接，加入跨域标识，保证可以被自由滑动进度条快进
-                if (song.url.includes('/api/parse?streamId=')) {
-                    audio.crossOrigin = "anonymous";
-                } else {
-                    audio.removeAttribute('crossOrigin');
-                }
-                
-                audio.src = song.url; songTitle.innerText = song.name; 
+                const song = activeList[currentIndex]; audio.src = song.url; songTitle.innerText = song.name; 
                 songArtist.innerText = (currentMode === 'mahiru') ? "しいなまひる 专属" : "网页内置歌单";
                 currentPlayingInfo = { name: song.name, url: song.url };
             }
             updateActiveHighlight(); progressBar.style.width = '0%'; currentTimeUI.innerText = '00:00';
+            
             updateMediaSession();
+
             if (autoPlay) { playAudio(); } else { pauseAudio(); }
         }
 
         function playAudio() { 
-            initVisualizer();
-            if (audioCtx && audioCtx.state === 'suspended') audioCtx.resume();
             audio.play().then(() => {
                 if ('mediaSession' in navigator) { navigator.mediaSession.playbackState = "playing"; }
             }).catch(() => { pauseAudio(); }); 
@@ -638,8 +498,12 @@
             else { playMode = 'loop'; modeBtn.innerText = '🔁'; modeBtn.title = '列表循环'; showBubbleWithTimer("しいなまひる提示：已切换到列表循环模式。"); }
         });
 
+        /* 新增：绑定“当前播放下载”按钮的点击事件 */
         currentDlBtn.addEventListener('click', () => {
-            if (!currentPlayingInfo.url) { showBubbleWithTimer("しいなまひる:本地导入的歌曲不能再次下载哦~"); return; }
+            if (!currentPlayingInfo.url) {
+                showBubbleWithTimer("しいなまひる:本地导入的歌曲不能再次下载哦~");
+                return;
+            }
             handleAudioDownload(currentPlayingInfo);
         });
 
@@ -652,6 +516,10 @@
         audio.addEventListener('timeupdate', () => { if (!isNaN(audio.duration)) { progressBar.style.width = `${(audio.currentTime / audio.duration) * 100}%`; currentTimeUI.innerText = formatTime(audio.currentTime); } });
         audio.addEventListener('loadedmetadata', () => { totalTimeUI.innerText = formatTime(audio.duration); });
         progressBarContainer.addEventListener('click', (e) => { if (isNaN(audio.duration)) return; audio.currentTime = (e.offsetX / progressBarContainer.clientWidth) * audio.duration; });
+
+        let bubbleTimer = null;
+        function showBubbleWithTimer(text) { if (bubbleTimer) clearTimeout(bubbleTimer); bubble.innerText = text; bubble.style.opacity = '1'; bubbleTimer = setTimeout(() => { bubble.style.opacity = '0'; }, 4000); }
+        mahiruSkin.addEventListener('click', () => { const q = ["别突然戳我呀...", "听音乐的时候要保持好心情哦。", "这首歌，我也很喜欢呢。"]; showBubbleWithTimer(q[Math.floor(Math.random() * q.length)]); });
 
         wyyDlBtn.addEventListener('click', async () => {
             const songId = wyyIdInput.value.trim();
@@ -667,22 +535,13 @@
                 if (!response.ok) throw new Error("接口返回异常");
                 const data = await response.json();
                 if (data.success) {
-                    showBubbleWithTimer(`❀ しいなまひる:成功解析并载入歌词！正在为您播放《${data.songName}》❀`);
-                    
-                    // 核心：强制开启匿名跨域，使后端的中转流支持快进/任意拖拽
-                    audio.crossOrigin = "anonymous";
+                    showBubbleWithTimer(`❀ しいなまひる:成功解析！正在为您播放《${data.songName}》❀`);
                     audio.src = data.audioUrl;
-                    
                     songTitle.innerText = data.songName;
                     songArtist.innerText = data.artistName || "网易云在线点播";
                     
+                    // 核心修改：将网易云解析拿到的直链和歌名同步给全局播放状态
                     currentPlayingInfo = { name: data.songName, url: data.audioUrl };
-
-                    if (data.lyric) {
-                        currentLyrics = parseLyric(data.lyric);
-                    } else {
-                        currentLyrics = [];
-                    }
 
                     playAudio();
                     wyyIdInput.value = '';
@@ -691,32 +550,38 @@
             finally { wyyDlBtn.innerText = "直接播放"; wyyDlBtn.disabled = false; }
         });
 
+        /* ================= 音频下载分流控制 ================= */
         async function handleAudioDownload(songItem) {
             if (!songItem || !songItem.url) return;
             const fileName = songItem.name + ".mp3";
-            
-            // 如果是移动端（手机浏览器或微信），采用专门的高兼容性流式跳转下载
+
             if (isMobileDevice()) {
-                showBubbleWithTimer("正在拉取音频流通道，请稍候...");
+                const confirmDownload = confirm(`❀ 真昼提示 ❀\n确定要下载歌曲《${songItem.name}》到手机中吗？`);
+                if (!confirmDownload) return;
+                showBubbleWithTimer("正在拉取音频流，请稍候...");
                 triggerStreamDownload(songItem.url, fileName);
-            } else {
-                // PC 端优先采用优雅的原生保存对话框
+            } 
+            else {
                 if (window.showSaveFilePicker) {
                     try {
                         showBubbleWithTimer("请选择您想存放音频的任意磁盘分区位置~");
                         const handle = await window.showSaveFilePicker({
                             suggestedName: fileName,
-                            types: [{ description: '音频文件', accept: { 'audio/mpeg': ['.mp3'] } }]
+                            types: [{ description: '音频文件', accept: { 'audio/mpeg': ['.mp3'], 'audio/ogg': ['.ogg'], 'audio/wav': ['.wav'], 'audio/flac': ['.flac'] } }]
                         });
                         showBubbleWithTimer("正在向所选路径写入数据文件，请勿关闭网页...");
+                        
                         const response = await fetch(songItem.url);
                         const blob = await response.blob();
                         const writable = await handle.createWritable();
                         await writable.write(blob);
                         await writable.close();
+                        
                         showBubbleWithTimer("❀ 歌曲已成功写入指定位置！");
                     } catch (err) {
-                        if (err.name !== 'AbortError') triggerStreamDownload(songItem.url, fileName); 
+                        if (err.name !== 'AbortError') { 
+                            triggerStreamDownload(songItem.url, fileName); 
+                        }
                     }
                 } else {
                     triggerStreamDownload(songItem.url, fileName);
@@ -725,102 +590,35 @@
         }
 
         function triggerStreamDownload(url, filename) {
-            const isMobile = isMobileDevice();
-
-            if (isMobile) {
-                // 【针对手机端重构】：手机端因为防盗链和文件沙箱，直接在新页面打开后端的代理流链接
-                // 这样手机浏览器自带的原生音频面板会直接唤醒，上面有自带的“保存/存储到文件/下载”菜单
-                showBubbleWithTimer("しいなまひる: 正在为您打开音频下载通道，请在打开的页面中选择‘存储/下载’哦~");
-                
-                const a = document.createElement('a');
-                a.href = url;
-                a.target = '_blank';
-                a.rel = 'noreferrer'; // 移除宿主 Referer，防盗链保底
-                document.body.appendChild(a);
-                a.click();
-                a.remove();
-            } else {
-                // PC 端采用 Fetch 机制，完美下载
-                fetch(url)
-                    .then(response => {
-                        if (!response.ok) throw new Error('流拉取异常');
-                        return response.blob();
-                    })
-                    .then(blob => {
-                        const blobUrl = URL.createObjectURL(blob);
-                        const a = document.createElement('a');
-                        a.href = blobUrl; 
-                        a.download = filename.endsWith('.mp3') ? filename : `${filename}.mp3`;
-                        document.body.appendChild(a); 
-                        a.click();
-                        setTimeout(() => {
-                            URL.revokeObjectURL(blobUrl); 
-                            a.remove();
-                        }, 100);
-                    })
-                    .catch(() => {
-                        // 保底降级
-                        const a = document.createElement('a');
-                        a.href = url; 
-                        a.target = '_blank';
-                        a.rel = 'noreferrer';
-                        document.body.appendChild(a); 
-                        a.click(); 
-                        a.remove();
-                    });
-            }
+            fetch(url)
+                .then(response => response.blob())
+                .then(blob => {
+                    const blobUrl = URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = blobUrl;
+                    a.download = filename;
+                    document.body.appendChild(a);
+                    a.click();
+                    URL.revokeObjectURL(blobUrl);
+                    a.remove();
+                })
+                .catch(() => {
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = filename;
+                    a.target = '_blank';
+                    document.body.appendChild(a);
+                    a.click();
+                    a.remove();
+                });
         }
 
-        const sakuraCanvas = document.getElementById('sakura-canvas');
-        const sCtx = sakuraCanvas.getContext('2d');
-        let sakuraList = [];
-
-        function resizeCanvas() {
-            sakuraCanvas.width = window.innerWidth;
-            sakuraCanvas.height = window.innerHeight;
-        }
-        window.addEventListener('resize', resizeCanvas);
-        resizeCanvas();
-
-        class Sakura {
-            constructor() {
-                this.x = Math.random() * sakuraCanvas.width;
-                this.y = Math.random() * sakuraCanvas.height - sakuraCanvas.height;
-                this.r = Math.random() * 4 + 3;
-                this.dx = Math.random() * 1 + 0.5;
-                this.dy = Math.random() * 1.2 + 0.8;
-                this.deg = Math.random() * 360;
-            }
-            draw() {
-                sCtx.save();
-                sCtx.translate(this.x, this.y);
-                sCtx.rotate(this.deg * Math.PI / 180);
-                sCtx.fillStyle = 'rgba(255, 183, 197, 0.65)';
-                sCtx.beginPath();
-                sCtx.ellipse(0, 0, this.r, this.r / 1.6, 0, 0, 2 * Math.PI);
-                sCtx.fill();
-                sCtx.restore();
-            }
-            update() {
-                this.x += this.dx; this.y += this.dy; this.deg += 0.4;
-                if (this.y > sakuraCanvas.height || this.x > sakuraCanvas.width) {
-                    this.y = -10; this.x = Math.random() * sakuraCanvas.width;
-                }
-            }
-        }
-
-        for (let i = 0; i < 45; i++) sakuraList.push(new Sakura());
-        function drawSakuraFrame() {
-            sCtx.clearRect(0, 0, sakuraCanvas.width, sakuraCanvas.height);
-            sakuraList.forEach(s => { s.update(); s.draw(); });
-            requestAnimationFrame(drawSakuraFrame);
-        }
-        drawSakuraFrame();
-
+        /* ================= Media Session 后台/锁屏联动 ================= */
         function updateMediaSession() {
             if ('mediaSession' in navigator) {
                 navigator.mediaSession.metadata = new MediaMetadata({
-                    title: songTitle.innerText, artist: songArtist.innerText,
+                    title: songTitle.innerText,
+                    artist: songArtist.innerText,
                     album: 'しいなまひる的治愈音乐盒',
                     artwork: [{ src: 'img/changpian.jpg', sizes: '512x512', type: 'image/jpeg' }]
                 });
@@ -831,11 +629,7 @@
             }
         }
 
-        window.addEventListener('DOMContentLoaded', () => {
-            initOnlinePlaylist();
-            initBondSystem();
-            showBubbleWithTimer(getMahiruGreeting(), 5000);
-        });
+        window.addEventListener('DOMContentLoaded', initOnlinePlaylist);
     </script>
 </body>
 </html>
