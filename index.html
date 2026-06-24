@@ -208,10 +208,14 @@
         /* 移动端高级适配 */
         @media (max-width: 768px) {
             .bg-layer { background: url('img/xiaoermo.jpg') no-repeat center center; background-size: cover !important; }
-            .main-wrapper { flex-direction: column; justify-content: flex-start; align-items: center; gap: 25px; padding: 25px 15px 140px; }
+            /* 关键修改：padding-bottom 调高至 200px，确保拉到最底部时不会被手机虚拟按键遮挡 */
+            .main-wrapper { flex-direction: column; justify-content: flex-start; align-items: center; gap: 25px; padding: 25px 15px 200px; }
             .player-container, .middle-lyrics-container, .right-playlist-container { width: 100%; max-width: 340px; box-sizing: border-box; }
-            .middle-lyrics-container { height: 180px; padding: 15px; border-radius: 24px; }
+            
+            /* 【优化重点】：手机端大幅拉长歌词板块的高度，从 180px 扩展至 300px */
+            .middle-lyrics-container { height: 300px; padding: 20px 15px; border-radius: 24px; }
             .right-playlist-container { height: 280px; padding: 20px; border-radius: 24px; }
+            
             .character-box { position: fixed !important; width: 90px; height: 145px; right: 10px; bottom: 10px; opacity: 0.95; z-index: 999999 !important; pointer-events: auto; }
             .mahiru-character { background-size: contain; }
             .character-box:hover .mahiru-character { transform: none !important; }
@@ -239,6 +243,7 @@
     <div class="decorations" id="decorations"></div>
 
     <div class="main-wrapper">
+        <!-- 核心播放器面板 -->
         <div class="player-container">
             <div class="disc-area">
                 <div class="tonearm" id="tonearm"></div>
@@ -270,13 +275,15 @@
             <audio id="myAudio"></audio>
         </div>
 
+        <!-- 中间容器：动态歌词滚动面板 -->
         <div class="middle-lyrics-container">
             <div class="lyrics-title-bar">L Y R I C S</div>
             <div class="lyrics-wrapper" id="lyricsWrapper">
-                <div class="lyric-line" style="opacity: 0.6; padding-top: 140px;">🎵 治愈音乐盒 · 伴你度过每一天</div>
+                <div class="lyric-line" style="opacity: 0.6; padding-top: 100px;">🎵 治愈音乐盒 · 伴你度过每一天</div>
             </div>
         </div>
 
+        <!-- 右侧容器：歌单面板 -->
         <div class="right-playlist-container">
             <div class="playlist-tabs">
                 <button class="tab-btn active" id="tabMahiru">真昼歌单 (<span id="mahiruCount">0</span>)</button>
@@ -577,7 +584,9 @@
 
         function clearLyrics(msg) {
             parsedLyrics = [];
-            lyricsWrapper.innerHTML = `<div class="lyric-line" style="opacity: 0.6; padding-top: 140px;">${msg}</div>`;
+            // 优化：初试文字在容器视窗居中对齐
+            const offset = isMobileDevice() ? "100px" : "140px";
+            lyricsWrapper.innerHTML = `<div class="lyric-line" style="opacity: 0.6; padding-top: ${offset};">${msg}</div>`;
         }
 
         function updateLyricsScroll(currentTime) {
@@ -599,10 +608,11 @@
                 const activeLine = document.getElementById(`lrc-${activeIndex}`);
                 if (activeLine && !activeLine.classList.contains('active')) {
                     activeLine.classList.add('active');
+                    // 【关键修复核心算法】：准确计算高度，让当前唱的那句永远对齐在中央
                     const containerHeight = lyricsWrapper.clientHeight;
                     const lineOffsetTop = activeLine.offsetTop;
-                    const lineHeigh = activeLine.clientHeight;
-                    lyricsWrapper.scrollTop = lineOffsetTop - (containerHeight / 2) + (lineHeigh / 2);
+                    const lineHeight = activeLine.clientHeight;
+                    lyricsWrapper.scrollTop = lineOffsetTop - (containerHeight / 2) + (lineHeight / 2);
                 }
             }
         }
