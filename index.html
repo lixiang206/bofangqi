@@ -4,7 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>しいなまひる的治愈音乐盒</title>
-    <link rel="manifest" href="./manifest.json">
     <style>
         :root {
             --mahiru-gold: #F5E6CC;      
@@ -154,7 +153,7 @@
         .dialogue-bubble::after { content: ''; position: absolute; bottom: -8px; right: 40px; border-width: 8px 8px 0; border-style: solid; border-color: rgba(255, 255, 255, 0.85) transparent; }
         .character-box:hover .dialogue-bubble { opacity: 1; transform: translateY(0); }
 
-        /* 已经修改：将按钮改为固定在网页左上角 */
+        /* 锁死固定在屏幕左上角 */
         .mahiru-link-btn { 
             position: fixed; 
             top: 20px; 
@@ -168,7 +167,7 @@
             background-size: cover; 
             cursor: pointer; 
             transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); 
-            z-index: 9999; /* 极高层级，防止被遮挡 */
+            z-index: 9999; 
             animation: buttonPulse 2s infinite ease-in-out; 
         }
         .mahiru-link-btn:hover { transform: scale(1.15) rotate(20deg); box-shadow: 0 6px 16px rgba(230, 197, 148, 0.6); border-color: var(--accent-gold); }
@@ -193,7 +192,7 @@
             .dialogue-bubble { position: fixed !important; bottom: 155px; right: 10px; font-size: 0.75rem; padding: 6px 12px; z-index: 1000000 !important; transform: translateY(0) !important; width: 160px; max-height: 65px; opacity: 1 !important; pointer-events: none; }
             .dialogue-bubble::after { right: 25px; }
             
-            /* 已经修改：手机移动端同样适配左上角 */
+            /* 手机移动端同样适配左上角 */
             .mahiru-link-btn { top: 15px; left: 15px; width: 42px; height: 42px; }
             .mahiru-link-btn .link-tooltip { top: 50px; }
 
@@ -307,7 +306,6 @@
         let playMode = 'loop'; 
         let currentPlayingInfo = { name: "", url: "" };
 
-        // ==================== [高级扩展状态变量] ====================
         let currentLyrics = []; 
         let listenTime = parseInt(localStorage.getItem('mahiru_listen_time')) || 0; 
         let mahiruLevel = parseInt(localStorage.getItem('mahiru_level')) || 1;
@@ -318,7 +316,6 @@
             return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) || window.innerWidth <= 768;
         }
 
-        // ==================== [功能 7：时间系统 (根据时间动态问候)] ====================
         function getMahiruGreeting() {
             const hour = new Date().getHours();
             if (hour >= 5 && hour < 9) return "早上好，早餐已经准备好了哦，今天也要精神满满呢。";
@@ -372,7 +369,6 @@
             }
         }
 
-        // ==================== [功能 8：好感度养成系统 & 点击互动] ====================
         function initBondSystem() {
             setInterval(() => {
                 if (audio && !audio.paused) {
@@ -406,7 +402,6 @@
             });
         }
 
-        // ==================== [功能 1：歌词原生解析与时间轴步进] ====================
         function parseLyric(lrcText) {
             const lines = lrcText.split('\n');
             const result = [];
@@ -442,7 +437,6 @@
             }
         });
 
-        // ==================== [功能 3：Web Audio 频谱绘图逻辑] ====================
         function initVisualizer() {
             if (audioCtx) return; 
             canvas = document.getElementById('visualizer');
@@ -492,7 +486,6 @@
             }
         }
 
-        // ==================== [基础多标签列表渲染] ====================
         tabMahiru.addEventListener('click', () => {
             if(currentMode === 'mahiru') return; currentMode = 'mahiru';
             tabMahiru.classList.add('active'); tabOnline.classList.remove('active'); tabLocal.classList.remove('active');
@@ -579,7 +572,7 @@
 
         async function loadSong(index, autoPlay = false) {
             const activeList = getActiveList(); if (activeList.length === 0) return;
-            currentIndex = index; currentLyrics = []; // 切歌重置歌词
+            currentIndex = index; currentLyrics = []; 
             if (currentMode === 'local') {
                 const fileHandle = activeList[currentIndex]; const file = await fileHandle.getFile();
                 audio.src = URL.createObjectURL(file); songTitle.innerText = file.name.replace(/\.[^/.]+$/, ""); songArtist.innerText = "本地音乐";
@@ -651,7 +644,6 @@
         audio.addEventListener('loadedmetadata', () => { totalTimeUI.innerText = formatTime(audio.duration); });
         progressBarContainer.addEventListener('click', (e) => { if (isNaN(audio.duration)) return; audio.currentTime = (e.offsetX / progressBarContainer.clientWidth) * audio.duration; });
 
-        // ==================== [网易云在线点播数据解析对接] ====================
         wyyDlBtn.addEventListener('click', async () => {
             const songId = wyyIdInput.value.trim();
             if (!songId || !/^\d+$/.test(songId)) { showBubbleWithTimer("しいなまひる:请输入纯数字的歌曲 ID 呢。"); return; }
@@ -673,7 +665,6 @@
                     
                     currentPlayingInfo = { name: data.songName, url: data.audioUrl };
 
-                    // 💡 重点：把后端带回来的云端 lyric 扔进前端的高级解析器中
                     if (data.lyric) {
                         currentLyrics = parseLyric(data.lyric);
                     } else {
@@ -687,7 +678,6 @@
             finally { wyyDlBtn.innerText = "直接播放"; wyyDlBtn.disabled = false; }
         });
 
-        /* ================= 音频下载分流控制 ================= */
         async function handleAudioDownload(songItem) {
             if (!songItem || !songItem.url) return;
             const fileName = songItem.name + ".mp3";
@@ -737,7 +727,6 @@
                 });
         }
 
-        /* ================= 樱花全屏飘落特效 Canvas 渲染引擎 ================= */
         const sakuraCanvas = document.getElementById('sakura-canvas');
         const sCtx = sakuraCanvas.getContext('2d');
         let sakuraList = [];
@@ -784,7 +773,6 @@
         }
         drawSakuraFrame();
 
-        /* ================= Media Session 后台/锁屏联动 ================= */
         function updateMediaSession() {
             if ('mediaSession' in navigator) {
                 navigator.mediaSession.metadata = new MediaMetadata({
@@ -799,20 +787,10 @@
             }
         }
 
-        // ==================== [页面初次加载挂载环境] ====================
         window.addEventListener('DOMContentLoaded', () => {
             initOnlinePlaylist();
             initBondSystem();
-            
-            // 弹出时间系统问候语
             showBubbleWithTimer(getMahiruGreeting(), 5000);
-
-            // ==================== [功能 4：向浏览器异步注册 PWA 运行环境] ====================
-            if ('serviceWorker' in navigator) {
-                navigator.serviceWorker.register('./sw.js')
-                    .then(() => console.log('PWA 运行环境就绪'))
-                    .catch(err => console.log('PWA 环境构建失败', err));
-            }
         });
     </script>
 </body>
