@@ -24,7 +24,7 @@
             color: var(--text-color);
         }
 
-        /* 新增：独立背景层，与内容分离，100%全屏覆盖 */
+        /* 独立背景层，与内容分离，100%全屏覆盖 */
         .bg-layer {
             position: fixed; top: 0; left: 0;
             width: 100vw; height: 100vh; height: 100dvh;
@@ -142,7 +142,7 @@
             padding: 8px; border-radius: 12px; font-size: 0.78rem; cursor: pointer; margin-top: 8px; font-weight: bold;
         }
 
-        /* ================= 中间：歌词面板修改为 Spotify 大字样式 ================= */
+        /* 中间：歌词面板修改为 Spotify 大字样式 */
         .lyrics-panel {
             flex: 1;
             padding: 40px 48px;
@@ -156,15 +156,15 @@
         }
         .lyrics-wrapper::-webkit-scrollbar { width: 0px; display: none; }
         
-        /* 改写：Spotify 风格歌词行元素 */
+        /* Spotify 风格歌词行元素 */
         .lyric-line {
             font-size: 2rem; 
             font-weight: 800; 
             line-height: 1.4; 
             color: #3e322b; 
-            opacity: 0.35; /* 未播放行半透明 */
+            opacity: 0.35; 
             transition: all 0.35s cubic-bezier(0.25, 1, 0.5, 1);
-            text-align: left; /* 左对齐 */
+            text-align: left; 
             cursor: pointer;
             letter-spacing: -0.5px;
             text-shadow: 0 1px 2px rgba(255,255,255,0.4);
@@ -172,13 +172,13 @@
         /* 激活时的 Spotify 行状态 */
         .lyric-line.active {
             opacity: 1; 
-            color: #AA7A44; /* 金棕色高亮 */
+            color: #AA7A44; 
             transform: scale(1.02);
             transform-origin: left center;
             text-shadow: 0 2px 8px rgba(255,255,255,0.8);
         }
 
-        /* ================= 底部：固定播放器控制面板 ================= */
+        /* 底部：固定播放器控制面板 */
         .bottom-player-panel {
             position: fixed; bottom: 12px; left: 12px; right: 12px; height: 76px;
             background: rgba(255, 255, 255, 0.7);
@@ -225,7 +225,7 @@
             .bottom-player-panel { grid-template-columns: 1.2fr 1.8fr; padding: 0 12px; height: 72px; }
             .player-right { display: none; }
             .lyric-line { font-size: 1.45rem; }
-            .character-box { display: none; } /* 移动端默认隐藏 */
+            .character-box { display: none; }
         }
     </style>
 </head>
@@ -234,6 +234,7 @@
     <div class="bg-layer"></div>
 
     <div class="app-container">
+        <!-- 顶部导航 -->
         <div class="top-navbar">
             <div class="top-logo">
                 <img src="img/changpian.jpg" alt="Logo">
@@ -241,7 +242,9 @@
             </div>
         </div>
 
+        <!-- 核心双栏面板 -->
         <div class="main-content">
+            <!-- 左卡片：曲目库与点播 -->
             <div class="glass-panel sidebar-panel">
                 <div class="sidebar-title">🎵 音乐库</div>
                 <div class="playlist-tabs">
@@ -253,6 +256,7 @@
                     <li style="color:#8C7A6B; text-align:center; padding-top:40px; font-size:0.78rem;">正在同步清单...</li>
                 </ul>
 
+                <!-- 剪切板粘贴点播控制台 -->
                 <div class="wyy-download-panel">
                     <div class="wyy-panel-title">网易云快捷解析点播</div>
                     <div class="wyy-download-box">
@@ -264,6 +268,7 @@
                 <button class="btn-folder" id="selectFolderBtn">📂 挂载本地其它音乐文件夹</button>
             </div>
 
+            <!-- 中右融合大卡片：Spotify大字歌词面板 -->
             <div class="glass-panel lyrics-panel">
                 <div class="lyrics-wrapper" id="lyricsWrapper">
                     <div class="lyric-line" style="opacity: 0.8; padding-top: 100px; text-align: center; color: var(--accent-gold);">🎵 每一天，都有真昼陪在你的身边</div>
@@ -271,6 +276,7 @@
             </div>
         </div>
 
+        <!-- 底部控制栏 -->
         <div class="bottom-player-panel">
             <div class="player-left">
                 <div class="current-cover"></div>
@@ -302,6 +308,7 @@
         </div>
     </div>
 
+    <!-- 看板娘组件 -->
     <div class="character-box">
         <div class="dialogue-bubble" id="bubble">今天想听什么歌呢？</div>
         <div class="mahiru-character" id="mahiruSkin"></div>
@@ -455,7 +462,6 @@
 
         function clearLyrics(msg) { parsedLyrics = []; lyricsWrapper.innerHTML = `<div class="lyric-line" style="opacity:0.7; padding-top:100px; text-align:center; color:var(--accent-gold); font-size:1.3rem;">${msg}</div>`; }
 
-        /* ================= 滚动联动修改为 Spotify 高亮放大滚动机制 ================= */
         function updateLyricsScroll(currentTime) {
             if (parsedLyrics.length === 0) return;
             let activeIndex = -1;
@@ -517,7 +523,7 @@
             } catch (err) { console.log("未能读取到剪贴板内容"); }
         });
 
-        // 云端快捷点播内核
+        // 云端快捷点播内核（【核心修复点】添加自适应 HTTPS 协议替换，解决双端 Mixed Content 无法播放问题）
         async function handleWyyParsing() {
             const songId = wyyIdInput.value.trim();
             if (!songId || !/^\d+$/.test(songId)) return;
@@ -531,7 +537,14 @@
                 const data = await response.json();
                 if (data.success) {
                     showBubble(`为你开播：《${data.songName}》`);
-                    audio.src = data.audioUrl; 
+                    
+                    // 精确清洗音频直链协议头，防止被浏览器拦截
+                    let cleanUrl = data.audioUrl;
+                    if (cleanUrl.startsWith('http:')) {
+                        cleanUrl = cleanUrl.replace('http:', 'https:');
+                    }
+                    
+                    audio.src = cleanUrl; 
                     songTitle.innerText = data.songName; 
                     songArtist.innerText = data.artistName || "网易云点播";
                     playAudio(); 
