@@ -146,12 +146,11 @@
         .track-item.active .track-dl-icon { color: #fff; opacity: 0.8; }
         .track-item.active .track-dl-icon:hover { opacity: 1; background: rgba(0,0,0,0.15); }
 
-        /* 真昼立牌与外链 */
-       /* 真昼立牌与外链（已优化电脑端右下角布局，防止遮挡歌词） */
+       /* 真昼立牌与外链（彻底远离中央歌词区） */
         .character-box { 
             position: absolute; 
-            bottom: -50px;      /* 👈 整体往下沉 30px */
-            right: 15px;        /* 👈 整体往右靠拢 15px，腾出中央空间 */
+            bottom: -65px;      /* 👈 继续下沉，降低纸片人高度 */
+            right: 10px;        /* 👈 强行贴紧浏览器最右侧边缘 */
             width: 220px; 
             height: 350px; 
             z-index: 20; 
@@ -159,29 +158,38 @@
         .mahiru-character { width: 100%; height: 100%; cursor: pointer; transition: all 0.5s ease; background: url('img/lihui.png') no-repeat bottom center; background-size: contain; -webkit-user-drag: none; }
         .character-box:hover .mahiru-character { transform: translateY(-10px); }
         
-        /* 气泡跟随立牌同步下移并微调 */
+        /* 气泡重构：整体向右压缩，拉开与左侧歌词的物理距离 */
         .dialogue-bubble { 
             position: absolute; 
-            bottom: 305px;      /* 👈 紧贴下移后的立牌头部 */
-            right: 5px; 
+            bottom: 290px;      /* 👈 适当压低高度 */
+            right: 25px;        /* 👈 往右侧推，让气泡整体向右靠拢 */
             background: rgba(255, 255, 255, 0.85); 
             backdrop-filter: blur(8px); 
-            padding: 8px 14px;  /* 👈 稍微收紧内边距 */
+            padding: 8px 12px; 
             border-radius: 16px; 
-            font-size: 0.85rem; 
+            font-size: 0.82rem;  /* 👈 字号稍微收敛，防止气泡过宽 */
             box-shadow: 0 5px 15px rgba(0,0,0,0.08); 
             opacity: 0; 
             transform: translateY(10px); 
             transition: all 0.4s ease; 
             pointer-events: none; 
-            width: 220px;       /* 👈 宽度稍微缩窄，减少向左延展 */
-            max-height: 60px;   /* 👈 限制最高高度，防止文字多时往上爆遮挡 */
+            width: 180px;       /* 👈 宽度由 220px 缩窄至 180px，把左边空间全让给歌词 */
+            max-height: 55px;   /* 👈 严控高度 */
             overflow: hidden; 
             z-index: 21; 
             text-align: left; 
             line-height: 1.4; 
         }
-        .dialogue-bubble::after { content: ''; position: absolute; bottom: -8px; right: 40px; border-width: 8px 8px 0; border-style: solid; border-color: rgba(255, 255, 255, 0.85) transparent; }
+        /* 调整小箭头位置，使其指向右侧的立牌 */
+        .dialogue-bubble::after { 
+            content: ''; 
+            position: absolute; 
+            bottom: -8px; 
+            right: 25px;        /* 👈 指向右侧 */
+            border-width: 8px 8px 0; 
+            border-style: solid; 
+            border-color: rgba(255, 255, 255, 0.85) transparent; 
+        }
         .character-box:hover .dialogue-bubble { opacity: 1; transform: translateY(0); }
 
         @keyframes buttonPulse {
