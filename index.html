@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>しいなまひる的治愈音乐盒</title>
+    <title>しいなまひる的治愈音乐盒 - Spotify 纯享版</title>
     <style>
         :root {
             --spotify-black: #000000;
@@ -153,10 +153,10 @@
             color: var(--spotify-text-muted); text-align: center; font-size: 0.8rem; gap: 12px; padding: 20px;
         }
 
-        /* 专门供给手机移动端展现的解析容器，默认隐藏 */
+        /* 手机端专用面板 */
         .mobile-extra-panel { display: none; }
 
-        /* ================= 底部：固定通栏播放器控制条 ================= */
+        /* ================= 底部：固定播放器 ================= */
         .bottom-player-bar {
             position: fixed; bottom: 0; left: 0; width: 100vw; height: 90px;
             background-color: #000000; display: grid; grid-template-columns: 1fr 2fr 1fr; align-items: center;
@@ -186,13 +186,13 @@
 
         .player-right { display: flex; align-items: center; justify-content: flex-end; gap: 16px; color: var(--spotify-text-muted); font-size: 0.85rem; }
 
-        /* ================= 看板娘核心组件 ================= */
+        /* 看板娘组件 */
         .character-box { position: fixed; bottom: 105px; right: 24px; width: 120px; height: 180px; z-index: 100; pointer-events: none; }
         .mahiru-character { width: 100%; height: 100%; cursor: pointer; pointer-events: auto; background: url('img/lihui.png') no-repeat bottom center; background-size: contain; }
         .dialogue-bubble { position: absolute; bottom: 190px; right: 0; background: rgba(20,20,20,0.9); border: 1px solid rgba(255,255,255,0.1); color: white; padding: 8px 12px; border-radius: 8px; font-size: 0.75rem; opacity: 0; transform: translateY(10px); transition: all 0.3s; pointer-events: none; white-space: nowrap; backdrop-filter: blur(5px); box-shadow: 0 4px 12px rgba(0,0,0,0.5); }
         .character-box:hover .dialogue-bubble { opacity: 1; transform: translateY(0); }
 
-        /* ================= 移动端终极完美兼容：把解析与本地功能搬到主视图 ================= */
+        /* ================= 移动端适配：完美搬运解析 ================= */
         @media (max-width: 992px) {
             .spotify-layout { 
                 grid-template-columns: 1fr; 
@@ -206,8 +206,6 @@
                 height: 250px; 
                 flex-shrink: 0;
             }
-            
-            /* 手机端激活专属额外面板：解析输入 + 文件夹功能区 */
             .mobile-extra-panel { 
                 display: flex !important; 
                 flex-direction: column; 
@@ -217,7 +215,6 @@
                 padding: 16px; 
                 flex-shrink: 0;
             }
-
             .center-lyrics-view { 
                 height: 380px; 
                 padding: 20px 30px !important; 
@@ -230,18 +227,19 @@
             .character-box { display: none; }
         }
 
-        #mobileTouchUnlock { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.9); z-index: 99999; display: flex; justify-content: center; align-items: center; }
-        .unlock-box { background: #181818; padding: 30px; border-radius: 12px; text-align: center; border: 1px solid #282828; }
-        .unlock-box button { background: white; color: black; border: none; padding: 10px 24px; border-radius: 20px; font-size: 0.9rem; cursor: pointer; font-weight: bold; }
+        #mobileTouchUnlock { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.95); z-index: 99999; display: flex; justify-content: center; align-items: center; }
+        .unlock-box { background: #181818; padding: 30px; border-radius: 12px; text-align: center; border: 1px solid #282828; width: 80%; max-width: 300px; }
+        .unlock-box button { background: white; color: black; border: none; padding: 12px 28px; border-radius: 20px; font-size: 0.95rem; cursor: pointer; font-weight: bold; width: 100%; }
     </style>
 </head>
 <body>
 
+    <!-- 手机端音频交互强锁层：修复手机不自动播放的核心 -->
     <div id="mobileTouchUnlock">
         <div class="unlock-box">
             <p style="margin-top:0; font-size:1.1rem; font-weight:bold; color: white;">椎名真昼的治愈音乐盒</p>
-            <p style="color:#b3b3b3; font-size:0.8rem; margin-bottom:20px;">点击下方按钮初始化播放器视图</p>
-            <button id="unlockBtn">开启体验</button>
+            <p style="color:#b3b3b3; font-size:0.8rem; margin-bottom:24px;">移动端规范要求：点击下方按钮激活网页音频内核</p>
+            <button id="unlockBtn">开启治愈体验</button>
         </div>
     </div>
 
@@ -250,11 +248,10 @@
             <img src="img/changpian.jpg" alt="Logo">
             <span>Mahiru Box</span>
         </div>
-        <div style="width: 100px;"></div>
     </div>
 
     <div class="spotify-layout">
-        
+        <!-- 左栏：歌单库 -->
         <div class="spotify-panel left-sidebar">
             <div class="sidebar-header">
                 <div class="sidebar-title"><span>☰</span> 你的音乐库</div>
@@ -269,43 +266,44 @@
             </ul>
         </div>
 
+        <!-- 手机端专属快捷功能面板 -->
         <div class="mobile-extra-panel">
             <div style="font-size: 0.85rem; font-weight: bold; color: var(--mahiru-gold); letter-spacing: 0.5px;">网易云快捷解析点播</div>
             <div class="wyy-download-box" style="margin-bottom:0;">
                 <input type="text" id="wyyIdInputMobile" class="wyy-input" placeholder="输入歌曲 ID">
-                <button id="wyyPasteBtnMobile" class="wyy-paste-btn" title="粘贴剪贴板">📋</button>
+                <button id="wyyPasteBtnMobile" class="wyy-paste-btn">📋</button>
                 <button id="wyyDlBtnMobile" class="wyy-btn">播放</button>
             </div>
             <button class="btn-folder" id="selectFolderBtnMobile" style="margin-bottom:0; padding:8px; border-style:solid; background:rgba(255,255,255,0.03);">📂 打开本地其它文件夹</button>
         </div>
 
+        <!-- 中栏：歌词面板 -->
         <div class="spotify-panel center-lyrics-view">
             <div class="lyrics-wrapper" id="lyricsWrapper">
                 <div class="lyric-line" style="opacity: 0.8; padding-top: 120px; text-align: center; color: var(--mahiru-gold);">🎵 治愈音乐盒 · 伴你度过每一天</div>
             </div>
         </div>
 
+        <!-- 右侧栏（大屏独享） -->
         <div class="spotify-panel right-sidebar">
             <div class="right-title">网易云快捷解析</div>
-            
             <div class="wyy-download-panel">
                 <div class="wyy-panel-title">快捷输入与一键粘贴</div>
                 <div class="wyy-download-box">
                     <input type="text" id="wyyIdInput" class="wyy-input" placeholder="输入歌曲 ID">
-                    <button id="wyyPasteBtn" class="wyy-paste-btn" title="粘贴剪贴板">📋</button>
+                    <button id="wyyPasteBtn" class="wyy-paste-btn">📋</button>
                     <button id="wyyDlBtn" class="wyy-btn">播放</button>
                 </div>
             </div>
-
             <button class="btn-folder" id="selectFolderBtn">📂 打开本地其它文件夹</button>
-
             <div class="queue-empty-state">
                 <span style="font-size:1.5rem;">☰</span>
-                <p>添加至播放队列<br><span style="color:var(--spotify-text-muted); font-size:0.75rem;">在曲目单或者上方输入框解析即可在此加载内容</span></p>
+                <p>添加至播放队列</p>
             </div>
         </div>
     </div>
 
+    <!-- 底部：固定通栏播放器控制条 -->
     <div class="bottom-player-bar">
         <div class="player-left">
             <div class="current-cover"></div>
@@ -317,11 +315,11 @@
 
         <div class="player-center">
             <div class="controls-buttons">
-                <button id="modeBtn" title="切换模式">🔁</button>
-                <button id="prevBtn" title="上一首">⏮</button>
-                <button id="playBtn" class="btn-main" title="播放/暂停">▶</button>
-                <button id="nextBtn" title="下一首">⏭</button>
-                <button id="currentDlBtn" title="下载这首歌">📥</button>
+                <button id="modeBtn">🔁</button>
+                <button id="prevBtn">⏮</button>
+                <button id="playBtn" class="btn-main">▶</button>
+                <button id="nextBtn">⏭</button>
+                <button id="currentDlBtn">📥</button>
             </div>
             <div class="progress-block">
                 <span class="time-label" id="currentTime">00:00</span>
@@ -342,12 +340,14 @@
         <div class="mahiru-character" id="mahiruSkin"></div>
     </div>
 
-    <audio id="myAudio"></audio>
+    <audio id="myAudio" crossorigin="anonymous" playsinline></audio>
 
     <script>
-        // ==================== 播放器核心逻辑 ====================
+        // 根据当前网页环境自适应选择加载协议（修复混用导致的手机拦截错误）
+        const scheme = window.location.protocol;
         const VERCEL_URL = window.location.origin; 
-        const supabaseBaseUrl = "https://dqfnxybsrbheeatzxxjg.supabase.co/storage/v1/object/public/music/";
+        const supabaseBaseUrl = `${scheme}//dqfnxybsrbheeatzxxjg.supabase.co/storage/v1/object/public/music/`;
+        
         const audio = document.getElementById('myAudio');
         const playBtn = document.getElementById('playBtn');
         const prevBtn = document.getElementById('prevBtn');
@@ -355,7 +355,6 @@
         const modeBtn = document.getElementById('modeBtn');
         const currentDlBtn = document.getElementById('currentDlBtn'); 
         
-        // 双端映射绑定
         const selectFolderBtn = document.getElementById('selectFolderBtn');
         const selectFolderBtnMobile = document.getElementById('selectFolderBtnMobile');
         const wyyIdInput = document.getElementById('wyyIdInput');
@@ -392,24 +391,28 @@
         let parsedLyrics = []; 
 
         function getTimeGreeting() {
-            const hour = new Date().getHours();
-            if (hour >= 5 && hour < 12) return "上午好！打起精神，今天也是美好的一天呢。";
-            if (hour >= 12 && hour < 18) return "下午好，累了的话就听首歌放松一下吧。";
-            return "晚上好，夜深了，听完这首歌就早点休息吧。";
+            return "今天想听点什么呢？随时点播吧！";
         }
 
+        // 手机端关键激活逻辑
         function unlockMobileAudio() {
-            audio.play().then(() => { audio.pause(); }).catch(e => console.log('激活中...'));
-            mobileTouchUnlock.style.display = 'none';
-            showBubbleWithTimer(getTimeGreeting());
+            audio.src = "data:audio/wav;base64,UklGRigAAABXQVZFZm10IBAAAAABAAEARKwAAIhYAQACABAAZGF0YQQAAAAAAAAG";
+            audio.play().then(() => {
+                audio.pause();
+                mobileTouchUnlock.style.display = 'none';
+                initOnlinePlaylist();
+            }).catch(e => {
+                // 容错处理
+                mobileTouchUnlock.style.display = 'none';
+                initOnlinePlaylist();
+            });
         }
         unlockBtn.addEventListener('click', unlockMobileAudio);
-        mobileTouchUnlock.addEventListener('click', unlockMobileAudio);
 
         async function initOnlinePlaylist() {
             try {
                 const response = await fetch('./music/list.json');
-                if (!response.ok) throw new Error('无法读取 list.json');
+                if (!response.ok) throw new Error();
                 const songsData = await response.json();
                 
                 if(songsData.mahiruSongs) {
@@ -427,7 +430,7 @@
                     if (mahiruSongs.length > 0) loadSong(0, false); 
                 }
             } catch (err) {
-                trackListUI.innerHTML = `<li style="color: #ff7875; text-align: center; padding-top: 40px; font-size:0.8rem;">歌单挂载同步异常</li>`;
+                trackListUI.innerHTML = `<li style="color: #ff7875; text-align: center; padding-top: 40px; font-size:0.8rem;">未检测到可加载的内置清单</li>`;
             }
         }
 
@@ -451,14 +454,13 @@
 
         async function handleFolderSelection() {
             try {
-                if (!window.showDirectoryPicker) { alert('您的浏览器不支持文件夹选取系统，请使用现代桌面端浏览器。'); return; }
+                if (!window.showDirectoryPicker) { alert('手机端暂不支持本地物理文件夹映射，请使用上方的网易云点播或切换回桌面浏览器。'); return; }
                 const dirHandle = await window.showDirectoryPicker(); localSongs = [];
                 for await (const entry of dirHandle.values()) { if (entry.kind === 'file' && /\.(mp3|wav|ogg|flac)$/i.test(entry.name)) localSongs.push(entry); }
-                if (localSongs.length === 0) { alert('没有检索到可用的音轨文件。'); return; }
+                if (localSongs.length === 0) return;
                 localSongs.sort((a, b) => a.name.localeCompare(b.name)); localCountUI.innerText = localSongs.length;
                 currentMode = 'local'; tabLocal.classList.add('active'); tabOnline.classList.remove('active'); tabMahiru.classList.remove('active');
                 renderPlaylist(); await loadSong(0, true);
-                showBubbleWithTimer("已成功捕获本地曲目资源！");
             } catch (err) { console.error(err); }
         }
         selectFolderBtn.addEventListener('click', handleFolderSelection);
@@ -501,18 +503,7 @@
                 itemLeft.appendChild(details);
                 li.appendChild(itemLeft);
                 
-                li.addEventListener('click', (e) => { 
-                    if(e.target.classList.contains('track-dl-icon')) return; 
-                    loadSong(index, true); 
-                });
-
-                if (currentMode !== 'local') {
-                    const dlIcon = document.createElement('span');
-                    dlIcon.className = 'track-dl-icon';
-                    dlIcon.innerHTML = '📥';
-                    dlIcon.addEventListener('click', (e) => { e.stopPropagation(); handleAudioDownload(item); });
-                    li.appendChild(dlIcon);
-                }
+                li.addEventListener('click', () => { loadSong(index, true); });
                 trackListUI.appendChild(li);
             });
             updateActiveHighlight();
@@ -531,25 +522,25 @@
                 const fileHandle = activeList[currentIndex]; const file = await fileHandle.getFile();
                 audio.src = URL.createObjectURL(file); songTitle.innerText = file.name.replace(/\.[^/.]+$/, ""); songArtist.innerText = "本地挂载";
                 currentPlayingInfo = { name: songTitle.innerText, url: "", id: null }; 
-                clearLyrics("本地曲目不支持云端歌词检索");
+                clearLyrics("本地曲目暂无歌词");
             } else {
                 const song = activeList[currentIndex]; audio.src = song.url; songTitle.innerText = song.name; 
                 songArtist.innerText = (currentMode === 'mahiru') ? "椎名真昼" : "在线歌单";
                 currentPlayingInfo = { name: song.name, url: song.url, id: song.id };
-                if(song.id) { fetchLyrics(song.id); } else { clearLyrics("暂无绑定的网易云 ID"); }
+                if(song.id) { fetchLyrics(song.id); } else { clearLyrics("暂无绑定云端歌词"); }
             }
             updateActiveHighlight(); progressBar.style.width = '0%'; currentTimeUI.innerText = '00:00';
             if (autoPlay) { playAudio(); } else { pauseAudio(); }
         }
 
         async function fetchLyrics(songId) {
-            clearLyrics("正在同步提取云端歌词...");
+            clearLyrics("正在加载歌词...");
             try {
                 const res = await fetch(`https://music.163.com/api/song/media?id=${songId}`);
                 if (!res.ok) throw new Error();
                 const data = await res.json();
-                if (data && data.lyric) { parseLyricText(data.lyric); } else { clearLyrics("未找到对应的云端纯文本"); }
-            } catch (err) { clearLyrics("网络请求超时，未成功加载歌词"); }
+                if (data && data.lyric) { parseLyricText(data.lyric); } else { clearLyrics("暂无歌词文本"); }
+            } catch (err) { clearLyrics("未找到匹配的在线歌词"); }
         }
 
         function parseLyricText(lyricStr) {
@@ -603,7 +594,14 @@
             }
         }
 
-        function playAudio() { audio.play().catch(() => { pauseAudio(); }); playBtn.innerText = '⏸'; }
+        function playAudio() { 
+            audio.play().then(() => {
+                playBtn.innerText = '⏸'; 
+            }).catch(() => { 
+                pauseAudio(); 
+            }); 
+        }
+        
         function pauseAudio() { audio.pause(); playBtn.innerText = '▶'; }
 
         playBtn.addEventListener('click', () => { if (audio.paused) { playAudio(); } else { pauseAudio(); } });
@@ -623,14 +621,9 @@
         audio.addEventListener('ended', () => { handleNextSong(true); });
 
         modeBtn.addEventListener('click', () => {
-            if (playMode === 'loop') { playMode = 'random'; modeBtn.innerText = '🔀'; showBubbleWithTimer("切换至随机播放。"); } 
-            else if (playMode === 'random') { playMode = 'single'; modeBtn.innerText = '🔂'; showBubbleWithTimer("正在单曲循环中。"); } 
-            else { playMode = 'loop'; modeBtn.innerText = '🔁'; showBubbleWithTimer("已回到普通循环。"); }
-        });
-
-        currentDlBtn.addEventListener('click', () => {
-            if (!currentPlayingInfo.url) return;
-            handleAudioDownload(currentPlayingInfo);
+            if (playMode === 'loop') { playMode = 'random'; modeBtn.innerText = '🔀'; } 
+            else if (playMode === 'random') { playMode = 'single'; modeBtn.innerText = '🔂'; } 
+            else { playMode = 'loop'; modeBtn.innerText = '🔁'; }
         });
 
         function formatTime(secs) { if (isNaN(secs)) return '00:00'; const m = Math.floor(secs / 60), s = Math.floor(secs % 60); return `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`; }
@@ -644,34 +637,20 @@
         audio.addEventListener('loadedmetadata', () => { totalTimeUI.innerText = formatTime(audio.duration); });
         progressBarContainer.addEventListener('click', (e) => { if (isNaN(audio.duration)) return; audio.currentTime = (e.offsetX / progressBarContainer.clientWidth) * audio.duration; });
 
-        // ==================== 看板娘交互逻辑 ====================
-        let bubbleTimer = null;
-        function showBubbleWithTimer(text) { 
-            if (bubbleTimer) clearTimeout(bubbleTimer); 
-            bubble.innerText = text; 
-            bubble.style.opacity = '1'; 
-            bubbleTimer = setTimeout(() => { bubble.style.opacity = '0'; }, 4000); 
-        }
-        mahiruSkin.addEventListener('click', () => { 
-            const quotes = ["真昼一直在陪着你听歌呢~", "这个专属大背景好漂亮呀！", "今天的曲目也同样治愈。"]; 
-            showBubbleWithTimer(quotes[Math.floor(Math.random() * quotes.length)]); 
-        });
-
-        // 双端一键粘贴剪贴板
+        // 双端一键粘贴
         async function handleClipboardPaste(inputTarget) {
             try {
                 if (!navigator.clipboard || !navigator.clipboard.readText) return;
                 const text = await navigator.clipboard.readText(); const trimmed = text.trim();
                 const match = trimmed.match(/id=(\d+)/);
                 if (match && match[1]) { inputTarget.value = match[1]; } 
-                else if (/^\d+$/.test(trimmed)) { inputTarget.value = trimmed; } 
                 else { inputTarget.value = trimmed; }
-            } catch (err) { console.log("无法读取剪贴板权限"); }
+            } catch (err) { console.log("无剪贴板权限"); }
         }
         wyyPasteBtn.addEventListener('click', () => handleClipboardPaste(wyyIdInput));
         wyyPasteBtnMobile.addEventListener('click', () => handleClipboardPaste(wyyIdInputMobile));
 
-        // 双端网易云点播请求合并
+        // 双端点播请求适应
         async function handleWyyParsing(inputTarget, btnTarget) {
             const songId = inputTarget.value.trim();
             if (!songId || !/^\d+$/.test(songId)) return;
@@ -684,9 +663,12 @@
                 });
                 const data = await response.json();
                 if (data.success) {
-                    showBubbleWithTimer(`加载完成，正在播放：《${data.songName}》`);
-                    audio.src = data.audioUrl; songTitle.innerText = data.songName; songArtist.innerText = data.artistName || "云端解析";
-                    currentPlayingInfo = { name: data.songName, url: data.audioUrl, id: songId };
+                    let playUrl = data.audioUrl;
+                    if(playUrl.startsWith('http:')) {
+                        playUrl = playUrl.replace('http:', scheme);
+                    }
+                    audio.src = playUrl; songTitle.innerText = data.songName; songArtist.innerText = data.artistName || "网易云点播";
+                    currentPlayingInfo = { name: data.songName, url: playUrl, id: songId };
                     playAudio(); if (data.lyric) { parseLyricText(data.lyric); } else { fetchLyrics(songId); }
                     inputTarget.value = '';
                 }
@@ -696,19 +678,6 @@
         }
         wyyDlBtn.addEventListener('click', () => handleWyyParsing(wyyIdInput, wyyDlBtn));
         wyyDlBtnMobile.addEventListener('click', () => handleWyyParsing(wyyIdInputMobile, wyyDlBtnMobile));
-
-        async function handleAudioDownload(songItem) {
-            if (!songItem || !songItem.url) return; const fileName = songItem.name + ".mp3";
-            fetch(songItem.url).then(r => r.blob()).then(blob => {
-                const blobUrl = URL.createObjectURL(blob); const a = document.createElement('a');
-                a.href = blobUrl; a.download = fileName; document.body.appendChild(a); a.click(); a.remove();
-            }).catch(() => { window.open(songItem.url, '_blank'); });
-        }
-
-        window.addEventListener('DOMContentLoaded', () => {
-            initOnlinePlaylist();
-            setTimeout(() => { showBubbleWithTimer(getTimeGreeting()); }, 1000);
-        });
     </script>
 </body>
 </html>
