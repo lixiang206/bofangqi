@@ -792,27 +792,6 @@
             initBondSystem();
             showBubbleWithTimer(getMahiruGreeting(), 5000);
         });
-
-        // 强制注销后台残留的 Service Worker 并清理缓存
-if ('serviceWorker' in navigator) {
-    navigator.serviceWorker.getRegistrations().then(function(registrations) {
-        for (let registration of registrations) {
-            // 注销 Service Worker
-            registration.unregister();
-            console.log('已强制注销残留的 Service Worker');
-        }
-    });
-}
-
-// 顺便清理浏览器可能残留的 Cache Storage 缓存空间
-if ('caches' in window) {
-    caches.keys().then(function(names) {
-        for (let name of names) {
-            caches.delete(name);
-            console.log('已清理残留的 Cache 空间:', name);
-        }
-    });
-}
     </script>
 </body>
 </html>
