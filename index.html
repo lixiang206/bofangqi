@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>しいなまひる的治愈音乐盒</title>
+    <title>しいなまひる的治愈音乐盒 - Spotify 纯享版</title>
     <style>
         :root {
             --spotify-black: #000000;
@@ -189,14 +189,30 @@
         .dialogue-bubble { position: absolute; bottom: 190px; right: 0; background: rgba(20,20,20,0.9); border: 1px solid rgba(255,255,255,0.1); color: white; padding: 8px 12px; border-radius: 8px; font-size: 0.75rem; opacity: 0; transform: translateY(10px); transition: all 0.3s; pointer-events: none; white-space: nowrap; backdrop-filter: blur(5px); box-shadow: 0 4px 12px rgba(0,0,0,0.5); }
         .character-box:hover .dialogue-bubble { opacity: 1; transform: translateY(0); }
 
-        /* ================= 手机移动端：完美兼容无损降级 ================= */
+        /* ================= 修复手机移动端：整合歌单与唯美背景播放页 ================= */
         @media (max-width: 992px) {
-            .spotify-layout { grid-template-columns: 1fr; }
-            .left-sidebar, .right-sidebar { display: none; }
+            .spotify-layout { 
+                grid-template-columns: 1fr; 
+                height: calc(100vh - 150px); 
+                height: calc(100dvh - 150px); 
+                overflow-y: auto; /* 允许上下滑动查看完整内容 */
+                gap: 16px;
+            }
+            .left-sidebar { 
+                display: flex !important; 
+                height: 260px; /* 固定一部分高度用来完美展现歌单列表 */
+                flex-shrink: 0;
+            }
+            .center-lyrics-view { 
+                height: 380px; /* 歌词背景大图区域 */
+                padding: 20px 30px !important; 
+                flex-shrink: 0;
+            }
+            .right-sidebar { display: none; }
             .bottom-player-bar { grid-template-columns: 1fr 1fr; padding: 0 16px; }
             .player-right { display: none; }
-            .lyric-line { font-size: 1.4rem; }
-            .character-box { display: none; } /* 移动端为了防止遮挡主轴歌词，默认安全隐藏 */
+            .lyric-line { font-size: 1.3rem; }
+            .character-box { display: none; }
         }
 
         #mobileTouchUnlock { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.9); z-index: 99999; display: flex; justify-content: center; align-items: center; }
@@ -227,7 +243,7 @@
     <!-- 主布局网格 -->
     <div class="spotify-layout">
         
-        <!-- 左栏：歌单音乐库 -->
+        <!-- 左栏：歌单音乐库（手机端现在会自动排在上方可见） -->
         <div class="spotify-panel left-sidebar">
             <div class="sidebar-header">
                 <div class="sidebar-title"><span>☰</span> 你的音乐库</div>
@@ -242,7 +258,7 @@
             </ul>
         </div>
 
-        <!-- 中栏：专属唯美原图背景的歌词视图 -->
+        <!-- 中栏：专属唯美原图背景的歌词视图（手机端现在自动接在歌单下方） -->
         <div class="spotify-panel center-lyrics-view">
             <div class="lyrics-wrapper" id="lyricsWrapper">
                 <div class="lyric-line" style="opacity: 0.8; padding-top: 120px; text-align: center; color: var(--mahiru-gold);">🎵 治愈音乐盒 · 伴你度过每一天</div>
@@ -306,7 +322,7 @@
         </div>
     </div>
 
-    <!-- 看板娘组件回归 -->
+    <!-- 看板娘组件 -->
     <div class="character-box">
         <div class="dialogue-bubble" id="bubble">今天想听什么歌呢？</div>
         <div class="mahiru-character" id="mahiruSkin"></div>
