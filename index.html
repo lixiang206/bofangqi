@@ -285,23 +285,44 @@
         }
 
         // 手机端音频上下文强行解锁
-        function unlockMobileAudio(e) {
-            e.preventDefault(); e.stopPropagation();
-            audio.src = "data:audio/wav;base64,UklGRigAAABXQVZFZm10IBAAAAABAAEARKwAAIhYAQACABAAZGF0YQQAAAAAAAIA";
-            audio.play().then(() => {
-                audio.pause();
-                mobileTouchUnlock.style.display = 'none';
-                showBubbleWithTimer(getTimeGreeting());
-                updateMediaSession();
-                if (getActiveList().length > 0) loadSong(0, true); 
-            }).catch(err => {
-                console.error("解锁失败:", err);
-                alert("由于手机浏览器限制，请再次点击进入。");
-            });
-        }
-        unlockBtn.addEventListener('click', unlockMobileAudio);
-        mobileTouchUnlock.addEventListener('touchstart', unlockMobileAudio, { passive: false });
+        /* ================= 修复版：手机端音频解锁与防死循环逻辑 ================= */
+function unlockMobileAudio(e) {
+    // 1. 阻止事件冒泡和默认行为，防止重复触发
+    if (e) {
+        e.stopPropagation();
+        e.preventDefault();
+    }
 
+    // 2. 无论如何，先隐藏遮罩层，打碎死循环
+    mobileTouchUnlock.style.display = 'none';
+
+    // 3. 静音静默播放，专门用作用户手势凭证激活（兼容各种手机浏览器）
+    audio.muted = true;
+    audio.play().then(() => {
+        // 激活成功后，暂停并恢复音量，为后续播放做准备
+        audio.pause();
+        audio.muted = false;
+        console.log('手机端音频通道成功激活 ✨');
+    }).catch(err => {
+        // 即使失败了（部分浏览器严苛限制），也恢复音量，不卡死用户界面
+        audio.muted = false;
+        console.log('音频通道激活轻微受限，已跳过，防止死循环:', err);
+    });
+
+    // 4. 触发后续的 UI 交互
+    showBubbleWithTimer(getTimeGreeting());
+    updateMediaSession(); 
+}
+
+// 核心修复：只绑定给外层遮罩大框，内部按钮通过冒泡或直接点击都能统一且只执行一次
+mobileTouchUnlock.removeEventListener('click', unlockMobileAudio); // 干净清除旧监听
+unlockBtn.removeEventListener('click', unlockMobileAudio);
+
+mobileTouchUnlock.addEventListener('click', unlockMobileAudio);
+// 显式给按钮也加上，并阻止它继续往上传递
+unlockBtn.addEventListener('click', (e) => {
+    unlockMobileAudio(e);
+});
         // 初始化读取项目配置文件
         async function initOnlinePlaylist() {
             try {
