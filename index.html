@@ -147,17 +147,42 @@
         .track-item.active .track-dl-icon:hover { opacity: 1; background: rgba(0,0,0,0.15); }
 
         /* 真昼立牌与外链 */
-        .character-box { position: absolute; bottom: -20px; right: 30px; width: 220px; height: 350px; z-index: 20; }
+       /* 真昼立牌与外链（已优化电脑端右下角布局，防止遮挡歌词） */
+        .character-box { 
+            position: absolute; 
+            bottom: -50px;      /* 👈 整体往下沉 30px */
+            right: 15px;        /* 👈 整体往右靠拢 15px，腾出中央空间 */
+            width: 220px; 
+            height: 350px; 
+            z-index: 20; 
+        }
         .mahiru-character { width: 100%; height: 100%; cursor: pointer; transition: all 0.5s ease; background: url('img/lihui.png') no-repeat bottom center; background-size: contain; -webkit-user-drag: none; }
         .character-box:hover .mahiru-character { transform: translateY(-10px); }
-        .dialogue-bubble { position: absolute; bottom: 310px; right: 10px; background: rgba(255, 255, 255, 0.85); backdrop-filter: blur(8px); padding: 10px 16px; border-radius: 16px; font-size: 0.85rem; box-shadow: 0 5px 15px rgba(0,0,0,0.08); opacity: 0; transform: translateY(10px); transition: all 0.4s ease; pointer-events: none; width: 240px; max-height: 80px; overflow: hidden; z-index: 21; text-align: left; line-height: 1.4; }
+        
+        /* 气泡跟随立牌同步下移并微调 */
+        .dialogue-bubble { 
+            position: absolute; 
+            bottom: 305px;      /* 👈 紧贴下移后的立牌头部 */
+            right: 5px; 
+            background: rgba(255, 255, 255, 0.85); 
+            backdrop-filter: blur(8px); 
+            padding: 8px 14px;  /* 👈 稍微收紧内边距 */
+            border-radius: 16px; 
+            font-size: 0.85rem; 
+            box-shadow: 0 5px 15px rgba(0,0,0,0.08); 
+            opacity: 0; 
+            transform: translateY(10px); 
+            transition: all 0.4s ease; 
+            pointer-events: none; 
+            width: 220px;       /* 👈 宽度稍微缩窄，减少向左延展 */
+            max-height: 60px;   /* 👈 限制最高高度，防止文字多时往上爆遮挡 */
+            overflow: hidden; 
+            z-index: 21; 
+            text-align: left; 
+            line-height: 1.4; 
+        }
         .dialogue-bubble::after { content: ''; position: absolute; bottom: -8px; right: 40px; border-width: 8px 8px 0; border-style: solid; border-color: rgba(255, 255, 255, 0.85) transparent; }
         .character-box:hover .dialogue-bubble { opacity: 1; transform: translateY(0); }
-
-        .mahiru-link-btn { position: absolute; top: 10px; left: -60px; width: 54px; height: 54px; border-radius: 50%; border: 3px solid #fff; box-shadow: 0 4px 12px rgba(90, 75, 65, 0.25); background: url('img/changpian.jpg') no-repeat center; background-size: cover; cursor: pointer; transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); z-index: 22; animation: buttonPulse 2s infinite ease-in-out; }
-        .mahiru-link-btn:hover { transform: scale(1.15) rotate(20deg); box-shadow: 0 6px 16px rgba(230, 197, 148, 0.6); border-color: var(--accent-gold); }
-        .link-tooltip { position: absolute; top: -35px; left: 50%; transform: translateX(-50%); background: rgba(90, 75, 65, 0.9); color: #fff; padding: 4px 8px; border-radius: 6px; font-size: 0.75rem; white-space: nowrap; opacity: 0; transition: opacity 0.2s; pointer-events: none; }
-        .mahiru-link-btn:hover .link-tooltip { opacity: 1; }
 
         @keyframes buttonPulse {
             0% { box-shadow: 0 0 0 0 rgba(255, 255, 255, 0.7); }
