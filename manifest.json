@@ -1,0 +1,21 @@
+{
+  "name": "椎名真昼的治愈音乐盒",
+  "short_name": "真昼音乐盒",
+  "start_url": "index.html",
+  "display": "standalone",
+  "background_color": "#f7ede2",
+  "theme_color": "#5A4B41",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "img/changpian.jpg",
+      "sizes": "192x192",
+      "type": "image/jpeg"
+    },
+    {
+      "src": "img/changpian.jpg",
+      "sizes": "512x512",
+      "type": "image/jpeg"
+    }
+  ]
+}
