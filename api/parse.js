@@ -11,14 +11,10 @@ export default async function handler(req, res) {
     const { songId } = req.body;
     if (!songId) return res.status(400).json({ success: false, msg: '缺少歌曲 ID' });
 
-    // ==========================================
-    // 🔒 安全设计：直接从 Vercel 环境变量中读取你的 Cookie
-    // 这样不用把长长的 Cookie 暴露在公开代码里，更加安全！
-    // ==========================================
     const WYY_COOKIE = process.env.WYY_COOKIE || ""; 
 
     try {
-        // 调用移动端高品质接口获取包含你账号 VIP 权限的直链
+        // 1. 调用移动端高品质接口获取播放直链
         const fallbackUrl = `https://music.163.com/api/song/enhance/player/url?id=${songId}&ids=[${songId}]&br=320000`;
         const fallbackRes = await axios.get(fallbackUrl, {
             headers: {
@@ -31,29 +27,44 @@ export default async function handler(req, res) {
         let audioUrl = fallbackRes.data?.data?.[0]?.url;
         let isVip = false;
 
-        // 如果获取到了歌，且带有试听标记（说明这个Cookie失效了或者非VIP看不了完整版），进行通用直连兜底
         if (!audioUrl || fallbackRes.data?.data?.[0]?.freeTrialInfo) {
             audioUrl = `https://music.163.com/song/media/outer/url?id=${songId}.mp3`;
         } else {
             isVip = true; 
         }
 
-        // 云端简单模拟一下获取歌名
+        // 2. 获取歌名和歌手详细信息
         const detailUrl = `https://music.163.com/api/v1/song/detail/?id=${songId}&ids=%5B${songId}%5D`;
         const detailRes = await axios.get(detailUrl).catch(() => null);
         let songName = `网易云点播_${songId}`;
         let artistName = isVip ? "云端高品质通道 (VIP)" : "官方通用直连通道";
-        if (detailRes?.data?.songs?.[0]) {
-            songName = detailRes.data.songs[0].name;
-            artistName = detailRes.data.songs[0].ar.map(a => a.name).join(', ') + (isVip ? " [VIP]" : "");
+        
+        if (detailRes && detailRes.data && detailRes.data.songs && detailRes.data.songs[0]) {
+            const songInfo = detailRes.data.songs[0];
+            songName = songInfo.name;
+            artistName = songInfo.ar ? songInfo.ar.map(a => a.name).join('/') : songInfo.artists.map(a => a.name).join('/');
         }
 
+        // 3. 【新增】在后端顺便获取歌词，彻底避免前端跨域问题
+        let lyric = "";
+        try {
+            const lrcRes = await axios.get(`https://music.163.com/api/song/media?id=${songId}`);
+            if (lrcRes.data && lrcRes.data.lyric) {
+                lyric = lrcRes.data.lyric;
+            }
+        } catch(e) {
+            console.log("歌词获取失败");
+        }
+
+        // 将歌词 (lyric) 一并返回给前端
         return res.status(200).json({
             success: true,
-            songName: songName,
-            artistName: artistName,
-            audioUrl: audioUrl 
+            audioUrl,
+            songName,
+            artistName,
+            lyric: lyric 
         });
+
     } catch (error) {
         return res.status(500).json({ success: false, msg: error.message });
     }
