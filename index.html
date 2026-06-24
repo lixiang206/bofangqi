@@ -114,10 +114,16 @@
         .btn-folder { background: #A79284 !important; padding: 8px 16px; border-radius: 8px; font-size: 0.85rem; color: white; border: none; cursor: pointer; transition: background 0.2s; width: 100%; box-sizing: border-box; }
         .btn-folder:hover { background: #8B7E74; }
 
-        .wyy-download-box { margin-top: 15px; border-top: 1px dashed var(--accent-gold); padding-top: 15px; display: flex; gap: 8px; justify-content: center; align-items: center; }
-        .wyy-input { width: 60%; padding: 6px 12px; border: 1px solid var(--accent-gold); border-radius: 20px; outline: none; font-size: 0.8rem; color: var(--text-color); background: rgba(255, 255, 255, 0.4); transition: all 0.2s; }
+        /* 网易云网格输入栏优化：保证粘贴按钮加入后完美居中对齐 */
+        .wyy-download-box { margin-top: 15px; border-top: 1px dashed var(--accent-gold); padding-top: 15px; display: flex; gap: 6px; justify-content: center; align-items: center; }
+        .wyy-input { width: 50%; padding: 6px 12px; border: 1px solid var(--accent-gold); border-radius: 20px; outline: none; font-size: 0.8rem; color: var(--text-color); background: rgba(255, 255, 255, 0.4); transition: all 0.2s; }
         .wyy-input:focus { background: rgba(255, 255, 255, 0.8); border-color: var(--text-color); }
-        .wyy-btn { background: var(--text-color); color: white; border: none; padding: 6px 14px; border-radius: 20px; font-size: 0.8rem; cursor: pointer; white-space: nowrap; box-shadow: 0 2px 6px rgba(90, 75, 65, 0.15); transition: all 0.2s; }
+        
+        /* 新增：粘贴按钮特定样式 */
+        .wyy-paste-btn { background: #A79284; color: white; border: none; width: 30px; height: 30px; border-radius: 50%; font-size: 0.85rem; cursor: pointer; display: flex; justify-content: center; align-items: center; box-shadow: 0 2px 6px rgba(90, 75, 65, 0.15); transition: all 0.2s; flex-shrink: 0; }
+        .wyy-paste-btn:hover { background: #8B7E74; transform: scale(1.1); }
+        
+        .wyy-btn { background: var(--text-color); color: white; border: none; padding: 6px 12px; border-radius: 20px; font-size: 0.8rem; cursor: pointer; white-space: nowrap; box-shadow: 0 2px 6px rgba(90, 75, 65, 0.15); transition: all 0.2s; flex-shrink: 0; }
         .wyy-btn:hover { background: #7A695E; transform: scale(1.05); }
         .wyy-btn:disabled { background: #ccc; cursor: not-allowed; transform: none; }
 
@@ -208,11 +214,9 @@
         /* 移动端高级适配 */
         @media (max-width: 768px) {
             .bg-layer { background: url('img/xiaoermo.jpg') no-repeat center center; background-size: cover !important; }
-            /* 关键修改：padding-bottom 调高至 200px，确保拉到最底部时不会被手机虚拟按键遮挡 */
             .main-wrapper { flex-direction: column; justify-content: flex-start; align-items: center; gap: 25px; padding: 25px 15px 200px; }
             .player-container, .middle-lyrics-container, .right-playlist-container { width: 100%; max-width: 340px; box-sizing: border-box; }
             
-            /* 【优化重点】：手机端大幅拉长歌词板块的高度，从 180px 扩展至 300px */
             .middle-lyrics-container { height: 300px; padding: 20px 15px; border-radius: 24px; }
             .right-playlist-container { height: 280px; padding: 20px; border-radius: 24px; }
             
@@ -243,7 +247,6 @@
     <div class="decorations" id="decorations"></div>
 
     <div class="main-wrapper">
-        <!-- 核心播放器面板 -->
         <div class="player-container">
             <div class="disc-area">
                 <div class="tonearm" id="tonearm"></div>
@@ -269,13 +272,13 @@
             <button class="btn-folder" id="selectFolderBtn">📂 打开本地其它文件夹</button>
 
             <div class="wyy-download-box">
-                <input type="text" id="wyyIdInput" class="wyy-input" placeholder="输入网易云歌曲 ID">
+                <input type="text" id="wyyIdInput" class="wyy-input" placeholder="输入歌曲 ID">
+                <button id="wyyPasteBtn" class="wyy-paste-btn" title="一键粘贴剪贴板内容">📋</button>
                 <button id="wyyDlBtn" class="wyy-btn">直接播放</button>
             </div>
             <audio id="myAudio"></audio>
         </div>
 
-        <!-- 中间容器：动态歌词滚动面板 -->
         <div class="middle-lyrics-container">
             <div class="lyrics-title-bar">L Y R I C S</div>
             <div class="lyrics-wrapper" id="lyricsWrapper">
@@ -283,7 +286,6 @@
             </div>
         </div>
 
-        <!-- 右侧容器：歌单面板 -->
         <div class="right-playlist-container">
             <div class="playlist-tabs">
                 <button class="tab-btn active" id="tabMahiru">真昼歌单 (<span id="mahiruCount">0</span>)</button>
@@ -327,6 +329,7 @@
         const currentTimeUI = document.getElementById('currentTime');
         const totalTimeUI = document.getElementById('totalTime');
         const wyyIdInput = document.getElementById('wyyIdInput');
+        const wyyPasteBtn = document.getElementById('wyyPasteBtn');
         const wyyDlBtn = document.getElementById('wyyDlBtn');
         
         const tabMahiru = document.getElementById('tabMahiru');
@@ -348,7 +351,6 @@
         let currentPlayingInfo = { name: "", url: "", id: null };
         let parsedLyrics = []; // 解析后的歌词数组 [{time: 秒数, text: "歌词"}]
 
-        // 获取基于时间的动态问候语
         function getTimeGreeting() {
             const hour = new Date().getHours();
             if (hour >= 5 && hour < 12) {
@@ -525,7 +527,6 @@
             if (autoPlay) { playAudio(); } else { pauseAudio(); }
         }
 
-        /* ================= 歌词获取与解析核心逻辑 ================= */
         async function fetchLyrics(songId) {
             clearLyrics("正在加载歌词...");
             try {
@@ -584,7 +585,6 @@
 
         function clearLyrics(msg) {
             parsedLyrics = [];
-            // 优化：初试文字在容器视窗居中对齐
             const offset = isMobileDevice() ? "100px" : "140px";
             lyricsWrapper.innerHTML = `<div class="lyric-line" style="opacity: 0.6; padding-top: ${offset};">${msg}</div>`;
         }
@@ -608,7 +608,6 @@
                 const activeLine = document.getElementById(`lrc-${activeIndex}`);
                 if (activeLine && !activeLine.classList.contains('active')) {
                     activeLine.classList.add('active');
-                    // 【关键修复核心算法】：准确计算高度，让当前唱的那句永远对齐在中央
                     const containerHeight = lyricsWrapper.clientHeight;
                     const lineOffsetTop = activeLine.offsetTop;
                     const lineHeight = activeLine.clientHeight;
@@ -658,10 +657,7 @@
         });
 
         currentDlBtn.addEventListener('click', () => {
-            if (!currentPlayingInfo.url) {
-                showBubbleWithTimer("しいなまひる:本地导入的歌曲不能再次下载哦~");
-                return;
-            }
+            if (!currentPlayingInfo.url) { showBubbleWithTimer("しいなまひる:本地导入的歌曲不能再次下载哦~"); return; }
             handleAudioDownload(currentPlayingInfo);
         });
 
@@ -686,6 +682,40 @@
         let bubbleTimer = null;
         function showBubbleWithTimer(text) { if (bubbleTimer) clearTimeout(bubbleTimer); bubble.innerText = text; bubble.style.opacity = '1'; bubbleTimer = setTimeout(() => { bubble.style.opacity = '0'; }, 5000); }
         mahiruSkin.addEventListener('click', () => { const q = ["别突然戳我呀...", "听音乐的时候要保持好心情哦。", "这首歌，我也很喜欢呢。", getTimeGreeting()]; showBubbleWithTimer(q[Math.floor(Math.random() * q.length)]); });
+
+        /* ================= 新增：异步读取剪贴板一键粘贴核心逻辑 ================= */
+        wyyPasteBtn.addEventListener('click', async () => {
+            try {
+                // 部分现代移动端浏览器在非 HTTPS 环境下或未授权时可能会被拒
+                if (!navigator.clipboard || !navigator.clipboard.readText) {
+                    showBubbleWithTimer("しいなまひる: 当前浏览器不支持或者拒绝了剪贴板读取请求。");
+                    return;
+                }
+                const text = await navigator.clipboard.readText();
+                const trimmed = text.trim();
+                
+                if (!trimmed) {
+                    showBubbleWithTimer("しいなまひる: 剪贴板里空空如也，什么也没有找到呢。");
+                    return;
+                }
+                
+                // 贴心优化：如果用户复制的是整个网易云的分享链接，用正则自动把里面的 ID 给过滤出来
+                const match = trimmed.match(/id=(\d+)/);
+                if (match && match[1]) {
+                    wyyIdInput.value = match[1];
+                    showBubbleWithTimer("❀ 成功从链接中帮您识别并提取了歌曲 ID ❀");
+                } else if (/^\d+$/.test(trimmed)) {
+                    wyyIdInput.value = trimmed;
+                    showBubbleWithTimer("❀ 成功粘贴了歌曲 ID ❀");
+                } else {
+                    wyyIdInput.value = trimmed;
+                    showBubbleWithTimer("しいなまひる: 已为您粘贴，但看起来不符合纯数字规范呢。");
+                }
+            } catch (err) {
+                showBubbleWithTimer("しいなまひる: 复制失败了，可能需要您在手机上手动授权剪贴板读取。");
+                console.error(err);
+            }
+        });
 
         wyyDlBtn.addEventListener('click', async () => {
             const songId = wyyIdInput.value.trim();
