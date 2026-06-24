@@ -578,7 +578,16 @@
                 audio.src = URL.createObjectURL(file); songTitle.innerText = file.name.replace(/\.[^/.]+$/, ""); songArtist.innerText = "本地音乐";
                 currentPlayingInfo = { name: songTitle.innerText, url: "" };
             } else {
-                const song = activeList[currentIndex]; audio.src = song.url; songTitle.innerText = song.name; 
+                const song = activeList[currentIndex]; 
+                
+                // 核心：如果是网易云代理流链接，加入跨域标识，保证可以被自由滑动进度条快进
+                if (song.url.includes('/api/parse?streamId=')) {
+                    audio.crossOrigin = "anonymous";
+                } else {
+                    audio.removeAttribute('crossOrigin');
+                }
+                
+                audio.src = song.url; songTitle.innerText = song.name; 
                 songArtist.innerText = (currentMode === 'mahiru') ? "しいなまひる 专属" : "网页内置歌单";
                 currentPlayingInfo = { name: song.name, url: song.url };
             }
@@ -659,7 +668,11 @@
                 const data = await response.json();
                 if (data.success) {
                     showBubbleWithTimer(`❀ しいなまひる:成功解析并载入歌词！正在为您播放《${data.songName}》❀`);
+                    
+                    // 核心：强制开启匿名跨域，使后端的中转流支持快进/任意拖拽
+                    audio.crossOrigin = "anonymous";
                     audio.src = data.audioUrl;
+                    
                     songTitle.innerText = data.songName;
                     songArtist.innerText = data.artistName || "网易云在线点播";
                     
@@ -681,12 +694,13 @@
         async function handleAudioDownload(songItem) {
             if (!songItem || !songItem.url) return;
             const fileName = songItem.name + ".mp3";
+            
+            // 如果是移动端（手机浏览器或微信），采用专门的高兼容性流式跳转下载
             if (isMobileDevice()) {
-                const confirmDownload = confirm(`❀ 真昼提示 ❀\n确定要下载歌曲《${songItem.name}》到手机中吗？`);
-                if (!confirmDownload) return;
-                showBubbleWithTimer("正在拉取音频流，请稍候...");
+                showBubbleWithTimer("正在拉取音频流通道，请稍候...");
                 triggerStreamDownload(songItem.url, fileName);
             } else {
+                // PC 端优先采用优雅的原生保存对话框
                 if (window.showSaveFilePicker) {
                     try {
                         showBubbleWithTimer("请选择您想存放音频的任意磁盘分区位置~");
@@ -711,20 +725,50 @@
         }
 
         function triggerStreamDownload(url, filename) {
-            fetch(url)
-                .then(response => response.blob())
-                .then(blob => {
-                    const blobUrl = URL.createObjectURL(blob);
-                    const a = document.createElement('a');
-                    a.href = blobUrl; a.download = filename;
-                    document.body.appendChild(a); a.click();
-                    URL.revokeObjectURL(blobUrl); a.remove();
-                })
-                .catch(() => {
-                    const a = document.createElement('a');
-                    a.href = url; a.download = filename; a.target = '_blank';
-                    document.body.appendChild(a); a.click(); a.remove();
-                });
+            const isMobile = isMobileDevice();
+
+            if (isMobile) {
+                // 【针对手机端重构】：手机端因为防盗链和文件沙箱，直接在新页面打开后端的代理流链接
+                // 这样手机浏览器自带的原生音频面板会直接唤醒，上面有自带的“保存/存储到文件/下载”菜单
+                showBubbleWithTimer("しいなまひる: 正在为您打开音频下载通道，请在打开的页面中选择‘存储/下载’哦~");
+                
+                const a = document.createElement('a');
+                a.href = url;
+                a.target = '_blank';
+                a.rel = 'noreferrer'; // 移除宿主 Referer，防盗链保底
+                document.body.appendChild(a);
+                a.click();
+                a.remove();
+            } else {
+                // PC 端采用 Fetch 机制，完美下载
+                fetch(url)
+                    .then(response => {
+                        if (!response.ok) throw new Error('流拉取异常');
+                        return response.blob();
+                    })
+                    .then(blob => {
+                        const blobUrl = URL.createObjectURL(blob);
+                        const a = document.createElement('a');
+                        a.href = blobUrl; 
+                        a.download = filename.endsWith('.mp3') ? filename : `${filename}.mp3`;
+                        document.body.appendChild(a); 
+                        a.click();
+                        setTimeout(() => {
+                            URL.revokeObjectURL(blobUrl); 
+                            a.remove();
+                        }, 100);
+                    })
+                    .catch(() => {
+                        // 保底降级
+                        const a = document.createElement('a');
+                        a.href = url; 
+                        a.target = '_blank';
+                        a.rel = 'noreferrer';
+                        document.body.appendChild(a); 
+                        a.click(); 
+                        a.remove();
+                    });
+            }
         }
 
         const sakuraCanvas = document.getElementById('sakura-canvas');
