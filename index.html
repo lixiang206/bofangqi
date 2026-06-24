@@ -202,7 +202,7 @@
 
     <div id="mobileTouchUnlock">
         <div class="unlock-box">
-            <p>❀ 欢迎来到しいなまひ还原的音乐盒 ❀<br><small style="color:#888; font-weight:normal;">点击下方按钮解锁手机端音频</small></p>
+            <p>❀ 欢迎来到しいなまひ还原的音乐盒 ❀<br><small style="color:#888; font-weight:normal;">点击下方按钮解锁手机端音频并激活防长亮锁</small></p>
             <button id="unlockBtn">进入音乐盒</button>
         </div>
     </div>
@@ -238,7 +238,7 @@
                 <input type="text" id="wyyIdInput" class="wyy-input" placeholder="输入网易云歌曲 ID">
                 <button id="wyyDlBtn" class="wyy-btn">直接播放</button>
             </div>
-            <audio id="myAudio"></audio>
+            <audio id="myAudio" preload="auto" crossorigin="anonymous"></audio>
         </div>
 
         <div class="playlist-container">
@@ -270,7 +270,7 @@
         const prevBtn = document.getElementById('prevBtn');
         const nextBtn = document.getElementById('nextBtn');
         const modeBtn = document.getElementById('modeBtn');
-        const currentDlBtn = document.getElementById('currentDlBtn'); // 新增变量
+        const currentDlBtn = document.getElementById('currentDlBtn'); 
         const selectFolderBtn = document.getElementById('selectFolderBtn');
         const disc = document.getElementById('disc');
         const tonearm = document.getElementById('tonearm');
@@ -297,15 +297,46 @@
         
         let playMode = 'loop'; 
 
-        // 全局状态跟踪当前播放的歌曲信息（包含网易云外链）
+        // 全局状态跟踪当前播放的歌曲信息
         let currentPlayingInfo = { name: "", url: "" };
+
+        // --- 新增变量：屏幕唤醒锁对象 ---
+        let wakeLock = null;
 
         function isMobileDevice() {
             return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) || window.innerWidth <= 768;
         }
 
+        // --- 新增函数：请求锁定屏幕不息屏 ---
+        async function requestWakeLock() {
+            if ('wakeLock' in navigator) {
+                try {
+                    wakeLock = await navigator.wakeLock.request('screen');
+                    console.log('❀ 成功激活防息屏锁，页面将保持长亮 ❀');
+                    // 监听锁被系统主动释放时的重新挂载（比如用户切出去又切回来）
+                    wakeLock.addEventListener('release', () => {
+                        console.log('防息屏锁已被释放');
+                    });
+                } catch (err) {
+                    console.error('防息屏锁定失败:', err);
+                }
+            } else {
+                console.log('当前浏览器不支持浏览器原生防息屏 API');
+            }
+        }
+
+        // --- 新增函数：当页面重新可见时（后台切回前台），重新补锁 ---
+        document.addEventListener('visibilitychange', async () => {
+            if (wakeLock !== null && document.visibilityState === 'visible') {
+                await requestWakeLock();
+            }
+        });
+
         function unlockMobileAudio() {
-            audio.play().then(() => { audio.pause(); }).catch(e => console.log('激活中...'));
+            audio.play().then(() => { 
+                audio.pause(); 
+                requestWakeLock(); // 用户点击允许时，顺便开启防息屏锁
+            }).catch(e => console.log('激活中...'));
             mobileTouchUnlock.style.display = 'none';
             showBubbleWithTimer("今天想听什么歌呢？");
             updateMediaSession(); 
@@ -445,7 +476,7 @@
             if (currentMode === 'local') {
                 const fileHandle = activeList[currentIndex]; const file = await fileHandle.getFile();
                 audio.src = URL.createObjectURL(file); songTitle.innerText = file.name.replace(/\.[^/.]+$/, ""); songArtist.innerText = "本地音乐";
-                currentPlayingInfo = { name: songTitle.innerText, url: "" }; // 本地音乐不提供下载流
+                currentPlayingInfo = { name: songTitle.innerText, url: "" }; 
             } else {
                 const song = activeList[currentIndex]; audio.src = song.url; songTitle.innerText = song.name; 
                 songArtist.innerText = (currentMode === 'mahiru') ? "しいなまひる 专属" : "网页内置歌单";
@@ -453,6 +484,7 @@
             }
             updateActiveHighlight(); progressBar.style.width = '0%'; currentTimeUI.innerText = '00:00';
             
+            // 加载切歌时自动注入 MediaSession 系统级任务栏元数据
             updateMediaSession();
 
             if (autoPlay) { playAudio(); } else { pauseAudio(); }
@@ -498,7 +530,6 @@
             else { playMode = 'loop'; modeBtn.innerText = '🔁'; modeBtn.title = '列表循环'; showBubbleWithTimer("しいなまひる提示：已切换到列表循环模式。"); }
         });
 
-        /* 新增：绑定“当前播放下载”按钮的点击事件 */
         currentDlBtn.addEventListener('click', () => {
             if (!currentPlayingInfo.url) {
                 showBubbleWithTimer("しいなまひる:本地导入的歌曲不能再次下载哦~");
@@ -540,7 +571,6 @@
                     songTitle.innerText = data.songName;
                     songArtist.innerText = data.artistName || "网易云在线点播";
                     
-                    // 核心修改：将网易云解析拿到的直链和歌名同步给全局播放状态
                     currentPlayingInfo = { name: data.songName, url: data.audioUrl };
 
                     playAudio();
@@ -614,22 +644,35 @@
         }
 
         /* ================= Media Session 后台/锁屏联动 ================= */
+        // 重构：确保切歌或更新状态时能够重新刷新全局系统控制句柄，使其在后台不受休眠机制影响
         function updateMediaSession() {
             if ('mediaSession' in navigator) {
-                navigator.mediaSession.metadata = new MediaMetadata({
-                    title: songTitle.innerText,
-                    artist: songArtist.innerText,
-                    album: 'しいなまひる的治愈音乐盒',
-                    artwork: [{ src: 'img/changpian.jpg', sizes: '512x512', type: 'image/jpeg' }]
-                });
-                navigator.mediaSession.setActionHandler('play', () => { playAudio(); });
-                navigator.mediaSession.setActionHandler('pause', () => { pauseAudio(); });
-                navigator.mediaSession.setActionHandler('previoustrack', () => { handlePrevSong(); });
-                navigator.mediaSession.setActionHandler('nexttrack', () => { handleNextSong(false); });
+                try {
+                    navigator.mediaSession.metadata = new MediaMetadata({
+                        title: songTitle.innerText,
+                        artist: songArtist.innerText,
+                        album: 'しいなまひる的治愈音乐盒',
+                        artwork: [{ src: 'img/changpian.jpg', sizes: '512x512', type: 'image/jpeg' }]
+                    });
+                    
+                    // 重新注册系统底层钩子：锁屏或通知栏的 播放/暂停/上一首/下一首
+                    navigator.mediaSession.setActionHandler('play', () => { playAudio(); });
+                    navigator.mediaSession.setActionHandler('pause', () => { pauseAudio(); });
+                    navigator.mediaSession.setActionHandler('previoustrack', () => { handlePrevSong(); });
+                    navigator.mediaSession.setActionHandler('nexttrack', () => { handleNextSong(false); });
+                    
+                    console.log("MediaSession 锁屏控制挂载成功！");
+                } catch(e) {
+                    console.log("MediaSession 挂载出错：", e);
+                }
             }
         }
 
-        window.addEventListener('DOMContentLoaded', initOnlinePlaylist);
+        window.addEventListener('DOMContentLoaded', () => {
+            initOnlinePlaylist();
+            // 尝试在PC端直接请求长亮锁
+            requestWakeLock();
+        });
     </script>
 </body>
 </html>
