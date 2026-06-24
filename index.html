@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>しいなまひる的治愈音乐盒 - Spotify 纯享版</title>
+    <title>しいなまひる的治愈音乐盒</title>
     <style>
         :root {
             --spotify-black: #000000;
@@ -31,7 +31,7 @@
             height: 60px;
             display: flex;
             align-items: center;
-            justify-content: space-between; /* 保持两端对齐 */
+            justify-content: space-between;
             padding: 0 20px;
             background-color: var(--spotify-black);
             z-index: 10;
@@ -94,7 +94,7 @@
         .track-dl-icon { font-size: 1rem; color: var(--spotify-text-muted); cursor: pointer; padding: 4px; border-radius: 50%; }
         .track-dl-icon:hover { color: var(--spotify-text-white); background: rgba(255,255,255,0.1); }
 
-        /* ================= 中间栏：改写为使用唯美背景的歌词页面 ================= */
+        /* ================= 中间栏：唯美原图背景的歌词页面 ================= */
         .center-lyrics-view {
             background: linear-gradient(rgba(0, 0, 0, 0.45), rgba(0, 0, 0, 0.55)), url('img/HLLn5bJa0AArBQe.jpg') no-repeat center center;
             background-size: cover;
@@ -107,7 +107,6 @@
         }
         .lyrics-wrapper::-webkit-scrollbar { width: 0px; display: none; }
         
-        /* 为了配合唯美背景，文字增加轻微阴影保证清晰度 */
         .lyric-line {
             font-size: 1.85rem; font-weight: 800; line-height: 1.4; color: #ffffff; 
             opacity: 0.4; transition: all 0.3s ease;
@@ -184,13 +183,20 @@
 
         .player-right { display: flex; align-items: center; justify-content: flex-end; gap: 16px; color: var(--spotify-text-muted); font-size: 0.85rem; }
 
-        /* 响应式降级 */
+        /* ================= 看板娘核心组件 ================= */
+        .character-box { position: fixed; bottom: 105px; right: 24px; width: 120px; height: 180px; z-index: 100; pointer-events: none; }
+        .mahiru-character { width: 100%; height: 100%; cursor: pointer; pointer-events: auto; background: url('img/lihui.png') no-repeat bottom center; background-size: contain; }
+        .dialogue-bubble { position: absolute; bottom: 190px; right: 0; background: rgba(20,20,20,0.9); border: 1px solid rgba(255,255,255,0.1); color: white; padding: 8px 12px; border-radius: 8px; font-size: 0.75rem; opacity: 0; transform: translateY(10px); transition: all 0.3s; pointer-events: none; white-space: nowrap; backdrop-filter: blur(5px); box-shadow: 0 4px 12px rgba(0,0,0,0.5); }
+        .character-box:hover .dialogue-bubble { opacity: 1; transform: translateY(0); }
+
+        /* ================= 手机移动端：完美兼容无损降级 ================= */
         @media (max-width: 992px) {
             .spotify-layout { grid-template-columns: 1fr; }
             .left-sidebar, .right-sidebar { display: none; }
             .bottom-player-bar { grid-template-columns: 1fr 1fr; padding: 0 16px; }
             .player-right { display: none; }
             .lyric-line { font-size: 1.4rem; }
+            .character-box { display: none; } /* 移动端为了防止遮挡主轴歌词，默认安全隐藏 */
         }
 
         #mobileTouchUnlock { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.9); z-index: 99999; display: flex; justify-content: center; align-items: center; }
@@ -209,13 +215,12 @@
         </div>
     </div>
 
-    <!-- 顶部状态栏 (去掉了搜索框) -->
+    <!-- 顶部状态栏 -->
     <div class="top-navbar">
         <div class="top-logo">
             <img src="img/changpian.jpg" alt="Logo">
             <span>Mahiru Box</span>
         </div>
-        <!-- 原输入框区域已移除，保持布局精简干净 -->
         <div style="width: 100px;"></div>
     </div>
 
@@ -301,6 +306,12 @@
         </div>
     </div>
 
+    <!-- 看板娘组件回归 -->
+    <div class="character-box">
+        <div class="dialogue-bubble" id="bubble">今天想听什么歌呢？</div>
+        <div class="mahiru-character" id="mahiruSkin"></div>
+    </div>
+
     <audio id="myAudio"></audio>
 
     <script>
@@ -332,6 +343,8 @@
         const onlineCountUI = document.getElementById('onlineCount');
         const localCountUI = document.getElementById('localCount');
         const lyricsWrapper = document.getElementById('lyricsWrapper');
+        const mahiruSkin = document.getElementById('mahiruSkin');
+        const bubble = document.getElementById('bubble');
 
         let currentMode = 'mahiru', mahiruSongs = [], onlineSongs = [], localSongs = [], currentIndex = 0;        
         const mobileTouchUnlock = document.getElementById('mobileTouchUnlock');
@@ -341,9 +354,17 @@
         let currentPlayingInfo = { name: "", url: "", id: null };
         let parsedLyrics = []; 
 
+        function getTimeGreeting() {
+            const hour = new Date().getHours();
+            if (hour >= 5 && hour < 12) return "上午好！打起精神，今天也是美好的一天呢。";
+            if (hour >= 12 && hour < 18) return "下午好，累了的话就听首歌放松一下吧。";
+            return "晚上好，夜深了，听完这首歌就早点休息吧。";
+        }
+
         function unlockMobileAudio() {
             audio.play().then(() => { audio.pause(); }).catch(e => console.log('激活中...'));
             mobileTouchUnlock.style.display = 'none';
+            showBubbleWithTimer(getTimeGreeting());
         }
         unlockBtn.addEventListener('click', unlockMobileAudio);
         mobileTouchUnlock.addEventListener('click', unlockMobileAudio);
@@ -400,6 +421,7 @@
                 localSongs.sort((a, b) => a.name.localeCompare(b.name)); localCountUI.innerText = localSongs.length;
                 currentMode = 'local'; tabLocal.classList.add('active'); tabOnline.classList.remove('active'); tabMahiru.classList.remove('active');
                 renderPlaylist(); await loadSong(0, true);
+                showBubbleWithTimer("已成功捕获本地曲目资源！");
             } catch (err) { console.error(err); }
         });
 
@@ -562,9 +584,9 @@
         audio.addEventListener('ended', () => { handleNextSong(true); });
 
         modeBtn.addEventListener('click', () => {
-            if (playMode === 'loop') { playMode = 'random'; modeBtn.innerText = '🔀'; } 
-            else if (playMode === 'random') { playMode = 'single'; modeBtn.innerText = '🔂'; } 
-            else { playMode = 'loop'; modeBtn.innerText = '🔁'; }
+            if (playMode === 'loop') { playMode = 'random'; modeBtn.innerText = '🔀'; showBubbleWithTimer("切换至随机播放。"); } 
+            else if (playMode === 'random') { playMode = 'single'; modeBtn.innerText = '🔂'; showBubbleWithTimer("正在单曲循环中。"); } 
+            else { playMode = 'loop'; modeBtn.innerText = '🔁'; showBubbleWithTimer("已回到普通循环。"); }
         });
 
         currentDlBtn.addEventListener('click', () => {
@@ -582,6 +604,19 @@
         });
         audio.addEventListener('loadedmetadata', () => { totalTimeUI.innerText = formatTime(audio.duration); });
         progressBarContainer.addEventListener('click', (e) => { if (isNaN(audio.duration)) return; audio.currentTime = (e.offsetX / progressBarContainer.clientWidth) * audio.duration; });
+
+        // ==================== 看板娘交互逻辑 ====================
+        let bubbleTimer = null;
+        function showBubbleWithTimer(text) { 
+            if (bubbleTimer) clearTimeout(bubbleTimer); 
+            bubble.innerText = text; 
+            bubble.style.opacity = '1'; 
+            bubbleTimer = setTimeout(() => { bubble.style.opacity = '0'; }, 4000); 
+        }
+        mahiruSkin.addEventListener('click', () => { 
+            const quotes = ["真昼一直在陪着你听歌呢~", "这个专属大背景好漂亮呀！", "今天的曲目也同样治愈。"]; 
+            showBubbleWithTimer(quotes[Math.floor(Math.random() * quotes.length)]); 
+        });
 
         wyyPasteBtn.addEventListener('click', async () => {
             try {
@@ -606,6 +641,7 @@
                 });
                 const data = await response.json();
                 if (data.success) {
+                    showBubbleWithTimer(`加载完成，正在播放：《${data.songName}》`);
                     audio.src = data.audioUrl; songTitle.innerText = data.songName; songArtist.innerText = data.artistName || "云端解析";
                     currentPlayingInfo = { name: data.songName, url: data.audioUrl, id: songId };
                     playAudio(); if (data.lyric) { parseLyricText(data.lyric); } else { fetchLyrics(songId); }
@@ -626,6 +662,7 @@
 
         window.addEventListener('DOMContentLoaded', () => {
             initOnlinePlaylist();
+            setTimeout(() => { showBubbleWithTimer(getTimeGreeting()); }, 1000);
         });
     </script>
 </body>
