@@ -2,363 +2,251 @@
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>しいなまひる的治愈音乐盒</title>
+    <link rel="manifest" href="./manifest.json">
     <style>
-        /* ==================== 1. 基础全局样式 ==================== */
-        * { box-sizing: border-box; margin: 0; padding: 0; }
-        body {
-            font-family: 'Helvetica Neue', Helvetica, 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', Arial, sans-serif;
-            background: #f7ece1 url('img/beijing.jpg') no-repeat center center fixed;
-            background-size: cover;
-            height: 100vh;
-            display: flex;
-            justify-content: center;
-            align-items: center;
+        :root {
+            --mahiru-gold: #F5E6CC;      
+            --mahiru-pink: #FFF0F5;      
+            --mahiru-blue: #E6F2FF;      
+            --text-color: #5A4B41;       
+            --accent-gold: #E6C594;
+        }
+
+        /* 锁死根节点，防止任何形式的滚动溢出白边 */
+        html, body {
+            margin: 0; padding: 0;
+            width: 100%; height: 100%;
+            height: 100vh; height: 100dvh;
             overflow: hidden;
-            color: #5A4B41;
+            background-color: #f7ede2; 
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            color: var(--text-color);
         }
 
-        /* 樱花画布背景 */
-        #sakura-canvas {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100vw;
-            height: 100vh;
+        /* 独立背景层，与内容分离，100%全屏覆盖 */
+        .bg-layer {
+            position: fixed; top: 0; left: 0;
+            width: 100vw; height: 100vh; height: 100dvh;
+            background: url('img/HLLn5bJa0AArBQe.jpg') no-repeat center center;
+            background-size: cover !important;
             z-index: 1;
-            pointer-events: none;
         }
 
-        /* ==================== 2. 主播放器容器容器 ==================== */
+        /* 全屏樱花飘落画布 */
+        #sakura-canvas {
+            position: fixed; top: 0; left: 0;
+            width: 100vw; height: 100vh; height: 100dvh;
+            pointer-events: none; z-index: 2;
+        }
+
+        /* 核心重构内容容器 */
+        .main-wrapper { 
+            position: absolute; top: 0; left: 0;
+            width: 100%; height: 100%;
+            display: flex; justify-content: center; align-items: center;
+            gap: 30px; z-index: 3; box-sizing: border-box;
+            overflow-x: hidden; overflow-y: auto; 
+            -webkit-overflow-scrolling: touch;
+            padding: 40px 20px;
+        }
+
+        /* 毛玻璃模糊透明效果 */
         .player-container {
-            position: relative;
-            z-index: 10;
-            width: 900px;
-            max-width: 95%;
-            height: 550px;
-            background: rgba(255, 255, 255, 0.65);
-            backdrop-filter: blur(20px);
-            -webkit-backdrop-filter: blur(20px);
-            border-radius: 32px;
-            border: 1px solid rgba(255, 255, 255, 0.4);
-            box-shadow: 0 20px 50px rgba(90, 75, 65, 0.15);
-            display: flex;
-            padding: 30px;
-            gap: 30px;
+            background: rgba(255, 255, 255, 0.45); 
+            backdrop-filter: blur(20px) saturate(140%); 
+            -webkit-backdrop-filter: blur(20px) saturate(140%);
+            padding: 35px 30px 25px; border-radius: 28px; 
+            border: 2px solid rgba(255, 255, 255, 0.5); 
+            box-shadow: 0 15px 35px rgba(90, 75, 65, 0.1), 0 0 20px rgba(255, 255, 255, 0.2);
+            text-align: center; width: 320px; flex-shrink: 0;
         }
 
-        /* ==================== 3. 左侧面板（黑胶片与控制区） ==================== */
-        .left-panel {
-            flex: 1.1;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: space-between;
-            position: relative;
+        .disc-area { position: relative; width: 200px; height: 200px; margin: 0 auto 20px; }
+
+        .tonearm {
+            position: absolute; top: -10px; right: 20px; width: 35px; height: 70px; background: #8B7E74;
+            transform-origin: top center; transform: rotate(-25deg); transition: transform 0.5s ease; z-index: 10;
+            clip-path: polygon(40% 0%, 60% 0%, 60% 80%, 100% 100%, 0% 100%);
+        }
+        .tonearm.playing { transform: rotate(0deg); }
+
+        .disc {
+            width: 100%; height: 100%; border-radius: 50%;
+            background: repeating-radial-gradient(#222, #111 4px, #222 5px);
+            border: 8px solid #2d2d2d; box-shadow: 0 8px 20px rgba(0,0,0,0.2);
+            display: flex; justify-content: center; align-items: center;
+            animation: rotateDisc 15s linear infinite; animation-play-state: paused;
         }
 
-        /* 唱片机区域结构 */
-        .turntable-area {
-            position: relative;
-            width: 240px;
-            height: 240px;
-            margin-top: 15px;
-        }
-
-        /* 频谱画布 */
-        #visualizer {
-            position: absolute;
-            top: -20px;
-            left: -20px;
-            width: 280px;
-            height: 280px;
-            z-index: 2;
-            pointer-events: none;
-        }
-
-        /* 黑胶唱片 */
-        .disc-wrapper {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 240px;
-            height: 240px;
-            border-radius: 50%;
-            background: #111;
-            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            z-index: 3;
-            animation: rotateDisc 20s linear infinite;
-            animation-play-state: paused;
-        }
+        .disc-cover { width: 100px; height: 100px; border-radius: 50%; background: url('img/changpian.jpg') no-repeat center; background-size: cover; border: 3px solid #000; }
         @keyframes rotateDisc { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
 
-        .disc-center {
-            width: 100px;
-            height: 100px;
-            border-radius: 50%;
-            background: url('img/changpian.jpg') no-repeat center center;
-            background-size: cover;
-            border: 4px solid #222;
+        .song-title { font-size: 1.15rem; font-weight: bold; margin-bottom: 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .song-artist { font-size: 0.85rem; opacity: 0.75; margin-bottom: 15px; }
+
+        .progress-wrapper { margin-bottom: 20px; padding: 0 5px; }
+        .progress-bar-container { width: 100%; height: 6px; background: rgba(90, 75, 65, 0.15); border-radius: 10px; cursor: pointer; position: relative; margin-bottom: 6px; }
+        .progress-bar { height: 100%; width: 0%; background: linear-gradient(90deg, var(--accent-gold), var(--text-color)); border-radius: 10px; position: absolute; top: 0; left: 0; transition: width 0.1s linear; }
+        .time-info { display: flex; justify-content: space-between; font-size: 0.75rem; opacity: 0.7; }
+
+        /* 播放控制栏容器 */
+        .controls { display: flex; justify-content: center; align-items: center; gap: 10px; margin-bottom: 15px; }
+        .controls button { background: var(--text-color); color: #fff; border: none; cursor: pointer; transition: all 0.2s ease; box-shadow: 0 4px 10px rgba(90, 75, 65, 0.2); }
+        .btn-main { padding: 12px 22px; font-size: 1rem; border-radius: 50px; }
+        .btn-side { padding: 10px 14px; font-size: 0.9rem; border-radius: 50%; }
+        .btn-mode, .btn-current-dl { padding: 10px 12px; font-size: 0.85rem; border-radius: 50%; background: #A79284 !important; }
+        .controls button:hover { transform: scale(1.08); background: #7A695E; }
+
+        .btn-folder { background: #A79284 !important; padding: 8px 16px; border-radius: 8px; font-size: 0.85rem; color: white; border: none; cursor: pointer; transition: background 0.2s; width: 100%; box-sizing: border-box; }
+        .btn-folder:hover { background: #8B7E74; }
+
+        .wyy-download-box { margin-top: 15px; border-top: 1px dashed var(--accent-gold); padding-top: 15px; display: flex; gap: 8px; justify-content: center; align-items: center; }
+        .wyy-input { width: 60%; padding: 6px 12px; border: 1px solid var(--accent-gold); border-radius: 20px; outline: none; font-size: 0.8rem; color: var(--text-color); background: rgba(255, 255, 255, 0.4); transition: all 0.2s; }
+        .wyy-input:focus { background: rgba(255, 255, 255, 0.8); border-color: var(--text-color); }
+        .wyy-btn { background: var(--text-color); color: white; border: none; padding: 6px 14px; border-radius: 20px; font-size: 0.8rem; cursor: pointer; white-space: nowrap; box-shadow: 0 2px 6px rgba(90, 75, 65, 0.15); transition: all 0.2s; }
+        .wyy-btn:hover { background: #7A695E; transform: scale(1.05); }
+        .wyy-btn:disabled { background: #ccc; cursor: not-allowed; transform: none; }
+
+        /* 歌单面板透亮毛玻璃效果 */
+        .playlist-container {
+            background: rgba(255, 255, 255, 0.4); 
+            backdrop-filter: blur(20px) saturate(140%);
+            -webkit-backdrop-filter: blur(20px) saturate(140%);
+            padding: 25px; border-radius: 28px; height: 380px; width: 340px; flex-shrink: 0;
+            box-shadow: 0 15px 35px rgba(90, 75, 65, 0.05); border: 2px solid rgba(255, 255, 255, 0.4);
+            display: flex; flex-direction: column;
         }
 
-        /* 唱针 */
-        .tonearm {
-            position: absolute;
-            top: -15px;
-            right: 20px;
-            width: 80px;
-            height: 120px;
-            background: url('img/changzhen.png') no-repeat top right;
-            background-size: contain;
-            z-index: 5;
-            transform-origin: top right;
-            transform: rotate(-25deg);
-            transition: transform 0.6s cubic-bezier(0.4, 0, 0.2, 1);
-            pointer-events: none;
-        }
-        .tonearm.playing { transform: rotate(2deg); }
+        .playlist-tabs { display: flex; gap: 8px; margin-bottom: 15px; border-bottom: 2px solid rgba(90, 75, 65, 0.15); padding-bottom: 8px; justify-content: space-between; }
+        .tab-btn { background: none; border: none; font-size: 0.82rem; font-weight: bold; color: var(--text-color); opacity: 0.6; cursor: pointer; padding: 0 2px; transition: opacity 0.2s; white-space: nowrap; }
+        .tab-btn.active { opacity: 1; position: relative; }
+        .tab-btn.active::after { content: ''; position: absolute; bottom: -10px; left: 0; width: 100%; height: 3px; background: var(--text-color); border-radius: 2px; }
 
-        /* 歌曲元数据 */
-        .song-meta { text-align: center; margin: 15px 0 5px 0; width: 100%; }
-        .song-title { font-size: 1.4rem; font-weight: 600; color: #4A3C32; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-bottom: 4px; }
-        .song-artist { font-size: 0.9rem; color: #8A766A; }
+        .track-list { list-style: none; padding: 0; margin: 0; overflow-y: auto; flex-grow: 1; }
+        .track-list::-webkit-scrollbar { width: 6px; }
+        .track-list::-webkit-scrollbar-thumb { background: rgba(90, 75, 65, 0.2); border-radius: 10px; }
 
-        /* 进度条控制 */
-        .progress-block { width: 100%; margin: 10px 0; }
-        .progress-bar-container { width: 100%; height: 6px; background: rgba(90, 75, 65, 0.15); border-radius: 3px; cursor: pointer; position: relative; }
-        .progress-bar { width: 0%; height: 100%; background: #E6C594; border-radius: 3px; transition: width 0.1s linear; }
-        .time-indicator { display: flex; justify-content: space-between; font-size: 0.75rem; color: #8A766A; margin-top: 5px; }
-
-        /* 按钮主控制网格 */
-        .control-row { display: flex; align-items: center; gap: 12px; margin-bottom: 12px; }
-        .btn {
-            background: #F4E4D4; border: none; color: #5A4B41; 
-            padding: 10px 18px; border-radius: 20px; font-weight: 600; 
-            cursor: pointer; transition: all 0.3s ease; font-size: 0.9rem;
-            box-shadow: 0 4px 10px rgba(90, 75, 65, 0.08);
-        }
-        .btn:hover { background: #E6C594; color: white; transform: translateY(-2px); }
-        .btn:active { transform: translateY(0); }
-        .btn-circle { width: 42px; height: 42px; border-radius: 50%; padding: 0; display: flex; justify-content: center; align-items: center; font-size: 1.1rem; }
-        
-        /* 文件夹导入与输入组 */
-        .import-group { display: flex; width: 100%; gap: 10px; }
-        .btn-folder { flex: 1; background: #DEB887; color: white; }
-        .btn-folder:hover { background: #CD853F; }
-
-        .wyy-panel { width: 100%; display: flex; gap: 8px; border-top: 1px dashed rgba(90,75,65,0.15); padding-top: 15px; }
-        .wyy-input { flex: 1; border: 1px solid rgba(90,75,65,0.25); background: rgba(255,255,255,0.5); padding: 0 15px; border-radius: 20px; height: 38px; font-size: 0.85rem; color: #5A4B41; outline: none; }
-        .wyy-input:focus { border-color: #E6C594; background: white; }
-        .btn-wyy { background: #8B4513; color: white; border-radius: 20px; padding: 0 20px; height: 38px; }
-        .btn-wyy:hover { background: #A0522D; }
-
-        /* ==================== 4. 右侧面板（多标签歌单列表） ==================== */
-        .right-panel {
-            flex: 1;
-            background: rgba(255, 255, 255, 0.4);
-            border-radius: 24px;
-            border: 1px solid rgba(255, 255, 255, 0.3);
-            display: flex;
-            flex-direction: column;
-            overflow: hidden;
-        }
-
-        /* 标签导航栏 */
-        .tab-header { display: flex; background: rgba(90, 75, 65, 0.05); border-bottom: 1px solid rgba(90, 75, 65, 0.08); }
-        .tab-item { flex: 1; text-align: center; padding: 14px 0; font-size: 0.85rem; font-weight: 600; color: #8A766A; cursor: pointer; transition: all 0.2s ease; position: relative; }
-        .tab-item:hover { color: #5A4B41; background: rgba(255,255,255,0.3); }
-        .tab-item.active { color: #5A4B41; background: rgba(255,255,255,0.5); }
-        .tab-item.active::after { content: ''; position: absolute; bottom: 0; left: 25%; width: 50%; height: 3px; background: #E6C594; border-radius: 2px; }
-        .tab-count { font-size: 0.75rem; font-weight: normal; opacity: 0.7; margin-left: 2px; }
-
-        /* 列表滚动机能 */
-        .track-list-scroller { flex: 1; overflow-y: auto; padding: 10px; }
-        .track-list-scroller::-webkit-scrollbar { width: 5px; }
-        .track-list-scroller::-webkit-scrollbar-thumb { background: rgba(90, 75, 65, 0.2); border-radius: 3px; }
-        
-        .track-list { list-style: none; }
-        .track-item {
+        .track-item { 
             display: flex; justify-content: space-between; align-items: center;
-            padding: 11px 16px; margin-bottom: 6px; border-radius: 14px;
-            cursor: pointer; transition: all 0.2s ease; font-size: 0.88rem;
+            padding: 10px 12px; border-radius: 8px; cursor: pointer; font-size: 0.85rem; 
+            transition: all 0.2s ease; margin-bottom: 4px; gap: 8px;
         }
-        .track-item:hover { background: rgba(255, 255, 255, 0.6); transform: translateX(2px); }
-        .track-item.active { background: #5A4B41; color: #FFFBF0; font-weight: 500; }
-        .track-name { flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; padding-right: 10px; }
-        .track-dl-icon { font-size: 0.95rem; opacity: 0.6; transition: opacity 0.2s; cursor: pointer; padding: 2px; }
-        .track-dl-icon:hover { opacity: 1; transform: scale(1.1); }
-        .track-item.active .track-dl-icon { filter: brightness(3); }
+        .track-item:hover { background: rgba(255, 255, 255, 0.3); }
+        .track-item.active { background: var(--text-color); color: #fff; font-weight: bold; }
 
-        /* ==================== 5. 移动端全屏流式激活安全锁 ==================== */
-        .mobile-unlock-layer {
-            position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
-            background: rgba(247, 236, 225, 0.96); z-index: 999;
-            display: flex; flex-direction: column; justify-content: center; align-items: center; gap: 20px;
+        .track-name { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; flex-grow: 1; }
+        
+        .track-dl-icon { 
+            font-size: 1.05rem; cursor: pointer; padding: 2px 6px; border-radius: 4px;
+            transition: all 0.2s; color: var(--text-color); opacity: 0.6; flex-shrink: 0;
         }
-        .unlock-avatar { width: 120px; height: 120px; border-radius: 50%; border: 4px solid white; box-shadow: 0 10px 25px rgba(0,0,0,0.1); }
-        .unlock-tips { color: #5A4B41; font-size: 1rem; font-weight: 500; text-align: center; line-height: 1.6; }
+        .track-dl-icon:hover { opacity: 1; background: rgba(255, 255, 255, 0.5); transform: scale(1.15); }
+        .track-item.active .track-dl-icon { color: #fff; opacity: 0.8; }
+        .track-item.active .track-dl-icon:hover { opacity: 1; background: rgba(0,0,0,0.15); }
 
-        /* 移动端响应式拦截 */
+        /* 真昼立牌与外链 */
+        .character-box { position: absolute; bottom: -20px; right: 30px; width: 220px; height: 350px; z-index: 20; }
+        .mahiru-character { width: 100%; height: 100%; cursor: pointer; transition: all 0.5s ease; background: url('img/lihui.png') no-repeat bottom center; background-size: contain; -webkit-user-drag: none; }
+        .character-box:hover .mahiru-character { transform: translateY(-10px); }
+        .dialogue-bubble { position: absolute; bottom: 310px; right: 10px; background: rgba(255, 255, 255, 0.85); backdrop-filter: blur(8px); padding: 10px 16px; border-radius: 16px; font-size: 0.85rem; box-shadow: 0 5px 15px rgba(0,0,0,0.08); opacity: 0; transform: translateY(10px); transition: all 0.4s ease; pointer-events: none; width: 240px; max-height: 80px; overflow: hidden; z-index: 21; text-align: left; line-height: 1.4; }
+        .dialogue-bubble::after { content: ''; position: absolute; bottom: -8px; right: 40px; border-width: 8px 8px 0; border-style: solid; border-color: rgba(255, 255, 255, 0.85) transparent; }
+        .character-box:hover .dialogue-bubble { opacity: 1; transform: translateY(0); }
+
+        .mahiru-link-btn { position: absolute; top: 10px; left: -60px; width: 54px; height: 54px; border-radius: 50%; border: 3px solid #fff; box-shadow: 0 4px 12px rgba(90, 75, 65, 0.25); background: url('img/changpian.jpg') no-repeat center; background-size: cover; cursor: pointer; transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); z-index: 22; animation: buttonPulse 2s infinite ease-in-out; }
+        .mahiru-link-btn:hover { transform: scale(1.15) rotate(20deg); box-shadow: 0 6px 16px rgba(230, 197, 148, 0.6); border-color: var(--accent-gold); }
+        .link-tooltip { position: absolute; top: -35px; left: 50%; transform: translateX(-50%); background: rgba(90, 75, 65, 0.9); color: #fff; padding: 4px 8px; border-radius: 6px; font-size: 0.75rem; white-space: nowrap; opacity: 0; transition: opacity 0.2s; pointer-events: none; }
+        .mahiru-link-btn:hover .link-tooltip { opacity: 1; }
+
+        @keyframes buttonPulse {
+            0% { box-shadow: 0 0 0 0 rgba(255, 255, 255, 0.7); }
+            70% { box-shadow: 0 0 0 8px rgba(255, 255, 255, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(255, 255, 255, 0); }
+        }
+
+        /* 移动端高级适配 */
         @media (max-width: 768px) {
-            .player-container { flex-direction: column; height: auto; max-height: 92vh; padding: 20px; gap: 15px; }
-            .left-panel { flex: none; }
-            .turntable-area { width: 160px; height: 160px; margin-top: 5px; }
-            .disc-wrapper { width: 160px; height: 160px; }
-            .disc-center { width: 70px; height: 70px; }
-            #visualizer { width: 200px; height: 200px; top: -20px; left: -20px; }
-            .tonearm { width: 55px; height: 80px; right: 5px; top: -10px; }
-            .song-meta .song-title { font-size: 1.1rem; }
-            .right-panel { height: 220px; }
-            .character-box { display: none !important; } /* 移动端由于屏幕窄，直接屏蔽挂件防止穿帮 */
+            .bg-layer { background: url('img/xiaoermo.jpg') no-repeat center center; background-size: cover !important; }
+            .main-wrapper { flex-direction: column; justify-content: flex-start; align-items: center; gap: 25px; padding: 25px 15px 140px; }
+            .player-container, .playlist-container { width: 100%; max-width: 340px; box-sizing: border-box; }
+            .playlist-container { height: 320px; }
+            .character-box { position: fixed !important; width: 90px; height: 145px; right: 10px; bottom: 10px; opacity: 0.95; z-index: 999999 !important; pointer-events: auto; }
+            .mahiru-character { background-size: contain; }
+            .character-box:hover .mahiru-character { transform: none !important; }
+            .dialogue-bubble { position: fixed !important; bottom: 155px; right: 10px; font-size: 0.75rem; padding: 6px 12px; z-index: 1000000 !important; transform: translateY(0) !important; width: 160px; max-height: 65px; opacity: 1 !important; pointer-events: none; }
+            .dialogue-bubble::after { right: 25px; }
+            .mahiru-link-btn { top: -50px; left: 20px; width: 40px; height: 40px; }
+            #mobileTouchUnlock { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; height: 100dvh; background: rgba(90, 75, 65, 0.4); backdrop-filter: blur(4px); -webkit-backdrop-filter: blur(4px); z-index: 99999; display: flex; justify-content: center; align-items: center; color: #5A4B41; font-weight: bold; }
+            .unlock-box { background: rgba(255, 255, 255, 0.95); padding: 25px 30px; border-radius: 20px; text-align: center; box-shadow: 0 10px 25px rgba(0,0,0,0.15); border: 2px solid var(--mahiru-gold); }
+            .unlock-box button { background: #A79284; color: white; border: none; padding: 10px 24px; border-radius: 50px; font-size: 0.9rem; cursor: pointer; }
         }
-
-        /* ==================== 6. 真昼立牌与对话气泡组件样式（彻底远离中央，防止遮挡歌词） ==================== */
-        .character-box { 
-            position: absolute !important; 
-            bottom: -65px !important;    /* 强行下沉，降低纸片人物理高度 */
-            right: 10px !important;      /* 强行贴紧右侧屏幕边缘，拉开与左侧中央的距离 */
-            width: 220px !important; 
-            height: 350px !important; 
-            z-index: 20 !important; 
-        }
-        
-        .mahiru-character { 
-            width: 100%; 
-            height: 100%; 
-            cursor: pointer; 
-            transition: all 0.5s ease; 
-            background: url('img/lihui.png') no-repeat bottom center; 
-            background-size: contain; 
-            -webkit-user-drag: none; 
-        }
-        
-        .character-box:hover .mahiru-character { 
-            transform: translateY(-10px); 
-        }
-        
-        /* 对话框气泡重构：向右侧收拢压缩空间 */
-        .dialogue-bubble { 
-            position: absolute !important; 
-            bottom: 290px !important;    /* 压低高度，紧靠立牌头部 */
-            right: 25px !important;     /* 往右侧推，避免向左触及长歌词 */
-            background: rgba(255, 255, 255, 0.85) !important; 
-            backdrop-filter: blur(8px) !important; 
-            padding: 8px 12px !important; 
-            border-radius: 16px !important; 
-            font-size: 0.82rem !important; /* 收缩字号，防止气泡异常变宽 */
-            box-shadow: 0 5px 15px rgba(0,0,0,0.08) !important; 
-            opacity: 0; 
-            transform: translateY(10px); 
-            transition: all 0.4s ease; 
-            pointer-events: none; 
-            width: 180px !important;     /* 宽度大幅压缩，腾出左侧无阻挡大空间 */
-            max-height: 55px !important; /* 限制高度上限 */
-            overflow: hidden; 
-            z-index: 21 !important; 
-            text-align: left; 
-            line-height: 1.4; 
-        }
-        
-        /* 气泡指示箭嘴定位右移，指向真昼 */
-        .dialogue-bubble::after { 
-            content: ''; 
-            position: absolute; 
-            bottom: -8px; 
-            right: 25px; 
-            border-width: 8px 8px 0; 
-            border-style: solid; 
-            border-color: rgba(255, 255, 255, 0.85) transparent; 
-        }
-        
-        /* 触发显示状态 */
-        .character-box:hover .dialogue-bubble { 
-            opacity: 1 !important; 
-            transform: translateY(0) !important; 
-        }
+        @media (min-width: 769px) { #mobileTouchUnlock { display: none !important; } }
     </style>
 </head>
 <body>
 
+    <div class="bg-layer"></div>
     <canvas id="sakura-canvas"></canvas>
 
-    <audio id="myAudio" preload="auto"></audio>
-
-    <div id="mobileTouchUnlock" class="mobile-unlock-layer">
-        <img src="img/changpian.jpg" class="unlock-avatar" alt="mahiru">
-        <div class="unlock-tips">
-            ❀ 椎名真昼的治愈音乐盒 ❀<br>
-            点击下方按钮，开始聆听美妙旋律
+    <div id="mobileTouchUnlock">
+        <div class="unlock-box">
+            <p>❀ 欢迎来到しいなまひる的音乐盒 ❀<br><small style="color:#888; font-weight:normal;">点击下方按钮解锁手机端音频</small></p>
+            <button id="unlockBtn">进入音乐盒</button>
         </div>
-        <button id="unlockBtn" class="btn">进入音乐盒</button>
     </div>
 
-    <div class="player-container">
-        
-        <div class="left-panel">
-            <div class="turntable-area">
-                <canvas id="visualizer"></canvas>
-                <div id="disc" class="disc-wrapper">
-                    <div class="disc-center"></div>
-                </div>
-                <div id="tonearm" class="tonearm"></div>
+    <div class="main-wrapper">
+        <div class="player-container">
+            <div class="disc-area">
+                <canvas id="visualizer" width="200" height="200" style="position:absolute; top:0; left:0; z-index:1; pointer-events:none;"></canvas>
+                <div class="tonearm" id="tonearm"></div>
+                <div class="disc" id="disc" style="position:relative; z-index:2;"><div class="disc-cover"></div></div>
             </div>
 
-            <div class="song-meta">
-                <div id="songTitle" class="song-title">载入中...</div>
-                <div id="songArtist" class="song-artist">请稍候</div>
+            <div class="song-title" id="songTitle">正在加载歌单...</div>
+            <div class="song-artist" id="songArtist">请稍候</div>
+
+            <div class="progress-wrapper">
+                <div class="progress-bar-container" id="progressBarContainer"><div class="progress-bar" id="progressBar"></div></div>
+                <div class="time-info"><span id="currentTime">00:00</span><span id="totalTime">00:00</span></div>
             </div>
 
-            <div class="progress-block">
-                <div id="progressBarContainer" class="progress-bar-container">
-                    <div id="progressBar" class="progress-bar"></div>
-                </div>
-                <div class="time-indicator">
-                    <span id="currentTime">00:00</span>
-                    <span id="totalTime">00:00</span>
-                </div>
+            <div class="controls">
+                <button class="btn-side" id="prevBtn" title="上一首">⏮</button>
+                <button class="btn-main" id="playBtn">播放</button>
+                <button class="btn-side" id="nextBtn" title="下一首">⏭</button>
+                <button class="btn-mode" id="modeBtn" title="切换播放模式">🔁</button>
+                <button class="btn-current-dl" id="currentDlBtn" title="下载当前播放的这首歌">📥</button>
             </div>
 
-            <div class="control-row">
-                <button id="modeBtn" class="btn btn-circle" title="列表循环">🔁</button>
-                <button id="prevBtn" class="btn btn-circle">⏮</button>
-                <button id="playBtn" class="btn">播放</button>
-                <button id="nextBtn" class="btn btn-circle">⏭</button>
-                <button id="currentDlBtn" class="btn btn-circle" title="下载当前歌曲">📥</button>
-            </div>
+            <button class="btn-folder" id="selectFolderBtn">📂 打开本地其它文件夹</button>
 
-            <div class="import-group">
-                <button id="selectFolderBtn" class="btn btn-folder">📁 打开本地其它文件夹</button>
-            </div>
-
-            <div class="wyy-panel">
+            <div class="wyy-download-box">
                 <input type="text" id="wyyIdInput" class="wyy-input" placeholder="输入网易云歌曲 ID">
-                <button id="wyyDlBtn" class="btn btn-wyy">直接播放</button>
+                <button id="wyyDlBtn" class="wyy-btn">直接播放</button>
             </div>
+            <audio id="myAudio"></audio>
         </div>
 
-        <div class="right-panel">
-            <div class="tab-header">
-                <div id="tabMahiru" class="tab-item active">真昼歌单 (<span id="mahiruCount">0</span>)</div>
-                <div id="tabOnline" class="tab-item">内置歌单 (<span id="onlineCount">0</span>)</div>
-                <div id="tabLocal" class="tab-item">本地文件夹 (<span id="localCount">0</span>)</div>
+        <div class="playlist-container">
+            <div class="playlist-tabs">
+                <button class="tab-btn active" id="tabMahiru">真昼歌单 (<span id="mahiruCount">0</span>)</button>
+                <button class="tab-btn" id="tabOnline">内置歌单 (<span id="onlineCount">0</span>)</button>
+                <button class="tab-btn" id="tabLocal">本地文件夹 (<span id="localCount">0</span>)</button>
             </div>
-            <div class="track-list-scroller">
-                <ul id="trackList" class="track-list">
-                    </ul>
-            </div>
+            <ul class="track-list" id="trackList">
+                <li style="color: #5A4B41; text-align: center; padding-top: 50px; opacity:0.6;">正在加载网页歌单...</li>
+            </ul>
         </div>
+    </div>
 
-        <div class="character-box">
-            <div id="bubble" class="dialogue-bubble">
-                ♪ 正在等待主人点歌呢...
-            </div>
-            <div id="mahiruSkin" class="mahiru-character"></div>
+    <div class="character-box" id="characterBox">
+        <div class="mahiru-link-btn" onclick="window.open('https://www.fsdm02.com/vodplay/WNsJJJJk-1-1.html', '_blank')" title="前往播放页">
+            <div class="link-tooltip">去看真昼吧~</div>
         </div>
-
+        <div class="mahiru-character" id="mahiruSkin"></div>
+        <div class="dialogue-bubble" id="bubble">今天想听什么歌呢？</div>
     </div>
 
     <script>
@@ -383,8 +271,6 @@
         const progressBar = document.getElementById('progressBar');
         const currentTimeUI = document.getElementById('currentTime');
         const totalTimeUI = document.getElementById('totalTime');
-        const wyyIdInput = document.getElementById('wyyIdInput');
-        const wyyDlBtn = document.getElementById('wyyDlBtn');
         
         const tabMahiru = document.getElementById('tabMahiru');
         const tabOnline = document.getElementById('tabOnline');
@@ -400,17 +286,18 @@
         let playMode = 'loop'; 
         let currentPlayingInfo = { name: "", url: "" };
 
+        // ==================== [高级扩展状态变量] ====================
         let currentLyrics = []; 
         let listenTime = parseInt(localStorage.getItem('mahiru_listen_time')) || 0; 
         let mahiruLevel = parseInt(localStorage.getItem('mahiru_level')) || 1;
         let bubbleTimer = null;
         let audioCtx, analyser, source, canvas, ctx, bufferLength, dataArray;
-        let isWyyPlaying = false; 
 
         function isMobileDevice() {
             return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) || window.innerWidth <= 768;
         }
 
+        // ==================== [功能 7：时间系统 (根据时间动态问候)] ====================
         function getMahiruGreeting() {
             const hour = new Date().getHours();
             if (hour >= 5 && hour < 9) return "早上好，早餐已经准备好了哦，今天也要精神满满呢。";
@@ -464,6 +351,7 @@
             }
         }
 
+        // ==================== [功能 8：好感度养成系统 & 点击互动] ====================
         function initBondSystem() {
             setInterval(() => {
                 if (audio && !audio.paused) {
@@ -497,6 +385,7 @@
             });
         }
 
+        // ==================== [功能 1：歌词原生解析与时间轴步进] ====================
         function parseLyric(lrcText) {
             const lines = lrcText.split('\n');
             const result = [];
@@ -532,6 +421,7 @@
             }
         });
 
+        // ==================== [功能 3：Web Audio 频谱绘图逻辑] ====================
         function initVisualizer() {
             if (audioCtx) return; 
             canvas = document.getElementById('visualizer');
@@ -539,32 +429,20 @@
             audioCtx = new (window.AudioContext || window.webkitAudioContext)();
             analyser = audioCtx.createAnalyser();
             
-            if (isWyyPlaying) {
-                audio.removeAttribute("crossOrigin");
-            } else {
-                audio.crossOrigin = "anonymous"; 
-            }
+            audio.crossOrigin = "anonymous"; 
+            source = audioCtx.createMediaElementSource(audio);
+            source.connect(analyser);
+            analyser.connect(audioCtx.destination);
             
-            try {
-                source = audioCtx.createMediaElementSource(audio);
-                source.connect(analyser);
-                analyser.connect(audioCtx.destination);
-                
-                analyser.fftSize = 64; 
-                bufferLength = analyser.frequencyBinCount;
-                dataArray = new Uint8Array(bufferLength);
-                drawVisualizer();
-            } catch (e) {
-                console.log("AudioContext 绑定受限");
-            }
+            analyser.fftSize = 64; 
+            bufferLength = analyser.frequencyBinCount;
+            dataArray = new Uint8Array(bufferLength);
+            drawVisualizer();
         }
 
         function drawVisualizer() {
             requestAnimationFrame(drawVisualizer);
-            if (!analyser || isWyyPlaying) {
-                if(ctx) ctx.clearRect(0, 0, canvas.width, canvas.height);
-                return; 
-            }
+            if (!analyser) return;
             analyser.getByteFrequencyData(dataArray);
             ctx.clearRect(0, 0, canvas.width, canvas.height);
             
@@ -578,4 +456,343 @@
             for (let i = 0; i < bufferLength; i++) {
                 const value = dataArray[i];
                 const percent = value / 255;
-                const length = percent * 25;
+                const length = percent * 25; 
+                
+                const angle = (i / bufferLength) * Math.PI * 2;
+                const x1 = centerX + Math.cos(angle) * radius;
+                const y1 = centerY + Math.sin(angle) * radius;
+                const x2 = centerX + Math.cos(angle) * (radius + length);
+                const y2 = centerY + Math.sin(angle) * (radius + length);
+                
+                ctx.beginPath();
+                ctx.moveTo(x1, y1);
+                ctx.lineTo(x2, y2);
+                ctx.stroke();
+            }
+        }
+
+        // ==================== [基础多标签列表渲染] ====================
+        tabMahiru.addEventListener('click', () => {
+            if(currentMode === 'mahiru') return; currentMode = 'mahiru';
+            tabMahiru.classList.add('active'); tabOnline.classList.remove('active'); tabLocal.classList.remove('active');
+            renderPlaylist(); currentLyrics = [];
+            if(mahiruSongs.length > 0) { loadSong(0, false); } else { trackListUI.innerHTML = `<li style="color: #5A4B41; text-align: center; padding-top: 50px; opacity: 0.6;">真昼歌单里空空如也哦</li>`; pauseAudio(); }
+        });
+
+        tabOnline.addEventListener('click', () => {
+            if(currentMode === 'online') return; currentMode = 'online';
+            tabOnline.classList.add('active'); tabMahiru.classList.remove('active'); tabLocal.classList.remove('active');
+            renderPlaylist(); currentLyrics = [];
+            if(onlineSongs.length > 0) { loadSong(0, false); } else { trackListUI.innerHTML = `<li style="color: #5A4B41; text-align: center; padding-top: 50px; opacity: 0.6;">内置歌单空空如也哦</li>`; pauseAudio(); }
+        });
+
+        tabLocal.addEventListener('click', () => {
+            if(currentMode === 'local') return; currentMode = 'local';
+            tabLocal.classList.add('active'); tabMahiru.classList.remove('active'); tabOnline.classList.remove('active');
+            renderPlaylist(); currentLyrics = [];
+            if(localSongs.length > 0) { loadSong(0, false); } else {
+                trackListUI.innerHTML = `<li style="color: #5A4B41; text-align: center; padding-top: 50px; opacity: 0.6;">请点击左下方按钮载入本地音乐</li>`;
+                pauseAudio();
+            }
+        });
+
+        selectFolderBtn.addEventListener('click', async () => {
+            try {
+                if (!window.showDirectoryPicker) { alert('当前浏览器不支持此 API，请使用 PC 端 Chrome / Edge 浏览器操作本地导入。'); return; }
+                const dirHandle = await window.showDirectoryPicker(); localSongs = [];
+                for await (const entry of dirHandle.values()) { if (entry.kind === 'file' && /\.(mp3|wav|ogg|flac)$/i.test(entry.name)) localSongs.push(entry); }
+                if (localSongs.length === 0) { alert('该文件夹下没有找到音乐格式文件！'); return; }
+                localSongs.sort((a, b) => a.name.localeCompare(b.name)); localCountUI.innerText = localSongs.length;
+                currentMode = 'local'; tabLocal.classList.add('active'); tabOnline.classList.remove('active'); tabMahiru.classList.remove('active');
+                renderPlaylist(); await loadSong(0, true);
+                showBubbleWithTimer("成功读取了 " + localSongs.length + " 首本地歌曲~");
+            } catch (err) { console.error(err); }
+        });
+
+        function getActiveList() {
+            if (currentMode === 'mahiru') return mahiruSongs;
+            if (currentMode === 'online') return onlineSongs;
+            return localSongs;
+        }
+
+        function renderPlaylist() {
+            trackListUI.innerHTML = ''; 
+            const activeList = getActiveList();
+            if (activeList.length === 0) return;
+            
+            activeList.forEach((item, index) => {
+                const li = document.createElement('li'); 
+                li.className = 'track-item';
+                const displayName = (currentMode === 'local') ? item.name.replace(/\.[^/.]+$/, "") : item.name;
+                
+                const nameSpan = document.createElement('span');
+                nameSpan.className = 'track-name';
+                nameSpan.innerText = `${index + 1}. ${displayName}`;
+                
+                li.addEventListener('click', (e) => { 
+                    if(e.target.classList.contains('track-dl-icon')) return; 
+                    loadSong(index, true); 
+                });
+                li.appendChild(nameSpan);
+
+                if (currentMode !== 'local') {
+                    const dlIcon = document.createElement('span');
+                    dlIcon.className = 'track-dl-icon';
+                    dlIcon.innerHTML = '📥';
+                    dlIcon.title = '下载这首音频';
+                    dlIcon.addEventListener('click', (e) => {
+                        e.stopPropagation(); 
+                        handleAudioDownload(item);
+                    });
+                    li.appendChild(dlIcon);
+                }
+                trackListUI.appendChild(li);
+            });
+            updateActiveHighlight();
+        }
+
+        function updateActiveHighlight() {
+            const items = trackListUI.querySelectorAll('.track-item'); items.forEach(item => item.classList.remove('active'));
+            if(items[currentIndex]) items[currentIndex].classList.add('active');
+        }
+
+        async function loadSong(index, autoPlay = false) {
+            const activeList = getActiveList(); if (activeList.length === 0) return;
+            currentIndex = index; currentLyrics = []; // 切歌重置歌词
+            if (currentMode === 'local') {
+                const fileHandle = activeList[currentIndex]; const file = await fileHandle.getFile();
+                audio.src = URL.createObjectURL(file); songTitle.innerText = file.name.replace(/\.[^/.]+$/, ""); songArtist.innerText = "本地音乐";
+                currentPlayingInfo = { name: songTitle.innerText, url: "" };
+            } else {
+                const song = activeList[currentIndex]; audio.src = song.url; songTitle.innerText = song.name; 
+                songArtist.innerText = (currentMode === 'mahiru') ? "しいなまひる 专属" : "网页内置歌单";
+                currentPlayingInfo = { name: song.name, url: song.url };
+            }
+            updateActiveHighlight(); progressBar.style.width = '0%'; currentTimeUI.innerText = '00:00';
+            updateMediaSession();
+            if (autoPlay) { playAudio(); } else { pauseAudio(); }
+        }
+
+        function playAudio() { 
+            initVisualizer();
+            if (audioCtx && audioCtx.state === 'suspended') audioCtx.resume();
+            audio.play().then(() => {
+                if ('mediaSession' in navigator) { navigator.mediaSession.playbackState = "playing"; }
+            }).catch(() => { pauseAudio(); }); 
+            playBtn.innerText = '暂停'; disc.style.animationPlayState = 'running'; tonearm.classList.add('playing'); 
+        }
+        
+        function pauseAudio() { 
+            audio.pause(); 
+            if ('mediaSession' in navigator) { navigator.mediaSession.playbackState = "paused"; }
+            playBtn.innerText = '播放'; disc.style.animationPlayState = 'paused'; tonearm.classList.remove('playing'); 
+        }
+
+        playBtn.addEventListener('click', () => { if (audio.paused) { playAudio(); } else { pauseAudio(); } });
+        prevBtn.addEventListener('click', () => { handlePrevSong(); });
+
+        function handlePrevSong() {
+            const activeList = getActiveList(); if (activeList.length === 0) return;
+            let idx = currentIndex;
+            if (playMode === 'random') { idx = Math.floor(Math.random() * activeList.length); } else { idx = currentIndex - 1; if (idx < 0) idx = activeList.length - 1; }
+            loadSong(idx, true); 
+        }
+
+        function handleNextSong(isAutoEnd = false) {
+            const activeList = getActiveList(); if (activeList.length === 0) return;
+            if (isAutoEnd && playMode === 'single') { audio.currentTime = 0; playAudio(); return; }
+            let idx = currentIndex;
+            if (playMode === 'random') { idx = Math.floor(Math.random() * activeList.length); if (activeList.length > 1 && idx === currentIndex) { idx = (idx + 1) % activeList.length; } } else { idx = currentIndex + 1; if (idx >= activeList.length) idx = 0; }
+            loadSong(idx, true);
+        }
+
+        nextBtn.addEventListener('click', () => { handleNextSong(false); });
+        audio.addEventListener('ended', () => { handleNextSong(true); });
+
+        modeBtn.addEventListener('click', () => {
+            if (playMode === 'loop') { playMode = 'random'; modeBtn.innerText = '🔀'; modeBtn.title = '随机播放'; showBubbleWithTimer("しいなまひる提示：已切换到随机播放模式。"); } 
+            else if (playMode === 'random') { playMode = 'single'; modeBtn.innerText = '🔂'; modeBtn.title = '单曲循环'; showBubbleWithTimer("しいなまひる提示：要一直重复听这首歌吗？"); } 
+            else { playMode = 'loop'; modeBtn.innerText = '🔁'; modeBtn.title = '列表循环'; showBubbleWithTimer("しいなまひる提示：已切换到列表循环模式。"); }
+        });
+
+        currentDlBtn.addEventListener('click', () => {
+            if (!currentPlayingInfo.url) { showBubbleWithTimer("しいなまひる:本地导入的歌曲不能再次下载哦~"); return; }
+            handleAudioDownload(currentPlayingInfo);
+        });
+
+        window.addEventListener('keydown', (e) => {
+            if (document.activeElement === wyyIdInput) return;
+            if (e.code === 'Space' || e.keyCode === 32) { e.preventDefault(); if (audio.paused) { playAudio(); } else { pauseAudio(); } }
+        });
+
+        function formatTime(secs) { if (isNaN(secs)) return '00:00'; const m = Math.floor(secs / 60), s = Math.floor(secs % 60); return `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`; }
+        audio.addEventListener('timeupdate', () => { if (!isNaN(audio.duration)) { progressBar.style.width = `${(audio.currentTime / audio.duration) * 100}%`; currentTimeUI.innerText = formatTime(audio.currentTime); } });
+        audio.addEventListener('loadedmetadata', () => { totalTimeUI.innerText = formatTime(audio.duration); });
+        progressBarContainer.addEventListener('click', (e) => { if (isNaN(audio.duration)) return; audio.currentTime = (e.offsetX / progressBarContainer.clientWidth) * audio.duration; });
+
+        // ==================== [网易云在线点播数据解析对接] ====================
+        wyyDlBtn.addEventListener('click', async () => {
+            const songId = wyyIdInput.value.trim();
+            if (!songId || !/^\d+$/.test(songId)) { showBubbleWithTimer("しいなまひる:请输入纯数字的歌曲 ID 呢。"); return; }
+            showBubbleWithTimer("しいなまひる:正在为您向云端请求解析，请稍候...");
+            wyyDlBtn.innerText = "解析中..."; wyyDlBtn.disabled = true;
+            try {
+                const response = await fetch(`${VERCEL_URL}/api/parse`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ songId: songId })
+                });
+                if (!response.ok) throw new Error("接口返回异常");
+                const data = await response.json();
+                if (data.success) {
+                    showBubbleWithTimer(`❀ しいなまひる:成功解析并载入歌词！正在为您播放《${data.songName}》❀`);
+                    audio.src = data.audioUrl;
+                    songTitle.innerText = data.songName;
+                    songArtist.innerText = data.artistName || "网易云在线点播";
+                    
+                    currentPlayingInfo = { name: data.songName, url: data.audioUrl };
+
+                    // 💡 重点：把后端带回来的云端 lyric 扔进前端的高级解析器中
+                    if (data.lyric) {
+                        currentLyrics = parseLyric(data.lyric);
+                    } else {
+                        currentLyrics = [];
+                    }
+
+                    playAudio();
+                    wyyIdInput.value = '';
+                } else { showBubbleWithTimer("しいなまひる:点播失败：" + data.msg); }
+            } catch (err) { showBubbleWithTimer("しいなまひる:无法连接到云端 service，请确认 Vercel 后端部署状态？"); } 
+            finally { wyyDlBtn.innerText = "直接播放"; wyyDlBtn.disabled = false; }
+        });
+
+        /* ================= 音频下载分流控制 ================= */
+        async function handleAudioDownload(songItem) {
+            if (!songItem || !songItem.url) return;
+            const fileName = songItem.name + ".mp3";
+            if (isMobileDevice()) {
+                const confirmDownload = confirm(`❀ 真昼提示 ❀\n确定要下载歌曲《${songItem.name}》到手机中吗？`);
+                if (!confirmDownload) return;
+                showBubbleWithTimer("正在拉取音频流，请稍候...");
+                triggerStreamDownload(songItem.url, fileName);
+            } else {
+                if (window.showSaveFilePicker) {
+                    try {
+                        showBubbleWithTimer("请选择您想存放音频的任意磁盘分区位置~");
+                        const handle = await window.showSaveFilePicker({
+                            suggestedName: fileName,
+                            types: [{ description: '音频文件', accept: { 'audio/mpeg': ['.mp3'] } }]
+                        });
+                        showBubbleWithTimer("正在向所选路径写入数据文件，请勿关闭网页...");
+                        const response = await fetch(songItem.url);
+                        const blob = await response.blob();
+                        const writable = await handle.createWritable();
+                        await writable.write(blob);
+                        await writable.close();
+                        showBubbleWithTimer("❀ 歌曲已成功写入指定位置！");
+                    } catch (err) {
+                        if (err.name !== 'AbortError') triggerStreamDownload(songItem.url, fileName); 
+                    }
+                } else {
+                    triggerStreamDownload(songItem.url, fileName);
+                }
+            }
+        }
+
+        function triggerStreamDownload(url, filename) {
+            fetch(url)
+                .then(response => response.blob())
+                .then(blob => {
+                    const blobUrl = URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = blobUrl; a.download = filename;
+                    document.body.appendChild(a); a.click();
+                    URL.revokeObjectURL(blobUrl); a.remove();
+                })
+                .catch(() => {
+                    const a = document.createElement('a');
+                    a.href = url; a.download = filename; a.target = '_blank';
+                    document.body.appendChild(a); a.click(); a.remove();
+                });
+        }
+
+        /* ================= 樱花全屏飘落特效 Canvas 渲染引擎 ================= */
+        const sakuraCanvas = document.getElementById('sakura-canvas');
+        const sCtx = sakuraCanvas.getContext('2d');
+        let sakuraList = [];
+
+        function resizeCanvas() {
+            sakuraCanvas.width = window.innerWidth;
+            sakuraCanvas.height = window.innerHeight;
+        }
+        window.addEventListener('resize', resizeCanvas);
+        resizeCanvas();
+
+        class Sakura {
+            constructor() {
+                this.x = Math.random() * sakuraCanvas.width;
+                this.y = Math.random() * sakuraCanvas.height - sakuraCanvas.height;
+                this.r = Math.random() * 4 + 3;
+                this.dx = Math.random() * 1 + 0.5;
+                this.dy = Math.random() * 1.2 + 0.8;
+                this.deg = Math.random() * 360;
+            }
+            draw() {
+                sCtx.save();
+                sCtx.translate(this.x, this.y);
+                sCtx.rotate(this.deg * Math.PI / 180);
+                sCtx.fillStyle = 'rgba(255, 183, 197, 0.65)';
+                sCtx.beginPath();
+                sCtx.ellipse(0, 0, this.r, this.r / 1.6, 0, 0, 2 * Math.PI);
+                sCtx.fill();
+                sCtx.restore();
+            }
+            update() {
+                this.x += this.dx; this.y += this.dy; this.deg += 0.4;
+                if (this.y > sakuraCanvas.height || this.x > sakuraCanvas.width) {
+                    this.y = -10; this.x = Math.random() * sakuraCanvas.width;
+                }
+            }
+        }
+
+        for (let i = 0; i < 45; i++) sakuraList.push(new Sakura());
+        function drawSakuraFrame() {
+            sCtx.clearRect(0, 0, sakuraCanvas.width, sakuraCanvas.height);
+            sakuraList.forEach(s => { s.update(); s.draw(); });
+            requestAnimationFrame(drawSakuraFrame);
+        }
+        drawSakuraFrame();
+
+        /* ================= Media Session 后台/锁屏联动 ================= */
+        function updateMediaSession() {
+            if ('mediaSession' in navigator) {
+                navigator.mediaSession.metadata = new MediaMetadata({
+                    title: songTitle.innerText, artist: songArtist.innerText,
+                    album: 'しいなまひる的治愈音乐盒',
+                    artwork: [{ src: 'img/changpian.jpg', sizes: '512x512', type: 'image/jpeg' }]
+                });
+                navigator.mediaSession.setActionHandler('play', () => { playAudio(); });
+                navigator.mediaSession.setActionHandler('pause', () => { pauseAudio(); });
+                navigator.mediaSession.setActionHandler('previoustrack', () => { handlePrevSong(); });
+                navigator.mediaSession.setActionHandler('nexttrack', () => { handleNextSong(false); });
+            }
+        }
+
+        // ==================== [页面初次加载挂载环境] ====================
+        window.addEventListener('DOMContentLoaded', () => {
+            initOnlinePlaylist();
+            initBondSystem();
+            
+            // 弹出时间系统问候语
+            showBubbleWithTimer(getMahiruGreeting(), 5000);
+
+            // ==================== [功能 4：向浏览器异步注册 PWA 运行环境] ====================
+            if ('serviceWorker' in navigator) {
+                navigator.serviceWorker.register('./sw.js')
+                    .then(() => console.log('PWA 运行环境就绪'))
+                    .catch(err => console.log('PWA 环境构建失败', err));
+            }
+        });
+    </script>
+</body>
+</html>
