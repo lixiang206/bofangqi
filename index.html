@@ -148,7 +148,7 @@
         }
         .lyrics-wrapper::-webkit-scrollbar { width: 0px; display: none; }
 
-        /* 【已重构】Spotify 风格歌词行样式定义 */
+        /* Spotify 风格歌词行样式定义 */
         .lyric-line {
             font-size: 0.95rem; 
             padding: 10px 14px; 
@@ -375,6 +375,10 @@
         let currentPlayingInfo = { name: "", url: "", id: null };
         let parsedLyrics = []; // 解析后的歌词数组 [{time: 秒数, text: "歌词"}]
 
+        // 新增：用于控制歌词滚动判定的变量
+        let isUserScrolling = false;
+        let userScrollTimeout = null;
+
         function getTimeGreeting() {
             const hour = new Date().getHours();
             if (hour >= 5 && hour < 12) {
@@ -591,7 +595,6 @@
             renderLyricsUI();
         }
 
-        /* 【已重构】动态构建歌词行并深度绑定 Spotify 跳转与即时滚动反馈逻辑 */
         function renderLyricsUI() {
             if (parsedLyrics.length === 0) {
                 clearLyrics("歌词解析空");
@@ -607,11 +610,15 @@
                 // 绑定点击跳转时间事件
                 div.addEventListener('click', () => {
                     if (!isNaN(audio.duration)) {
+                        // 点击某行歌词时，强制关闭滚动拦截状态，确保页面能立刻滚过去
+                        isUserScrolling = false;
+                        if (userScrollTimeout) clearTimeout(userScrollTimeout);
+                        
                         audio.currentTime = item.time; 
                         if (audio.paused) {
                             playAudio();
                         }
-                        updateLyricsScroll(item.time);
+                        updateLyricsScroll(item.time, true);
                     }
                 });
                 
@@ -626,8 +633,27 @@
             lyricsWrapper.innerHTML = `<div class="lyric-line" style="opacity: 0.6; padding-top: ${offset};">${msg}</div>`;
         }
 
-        /* 【已优化】改用 behavior: 'smooth' 带来极度丝滑的滚动推移效果 */
-        function updateLyricsScroll(currentTime) {
+        // 新增：监听歌词区域滚动事件（判断用户是否在用鼠标滚轮或触屏滑动）
+        lyricsWrapper.addEventListener('scroll', () => {
+            // 如果这个滚动不是由我们系统的自动居中 scrollTo 触发的
+            if (!isUserScrolling) {
+                // 开启拦截状态，阻止自动随音乐进度而滚动
+                isUserScrolling = true;
+            }
+
+            // 只要用户还在持续滚动，就不断重置并延迟 2000 毫秒 (2秒) 的防抖定时器
+            if (userScrollTimeout) clearTimeout(userScrollTimeout);
+            userScrollTimeout = setTimeout(() => {
+                isUserScrolling = false; // 2秒没有发生新的滚动事件，释放拦截状态
+                // 释放后，立刻同步刷新并平滑滚动回当前播放的时间进度行
+                if (!isNaN(audio.duration)) {
+                    updateLyricsScroll(audio.currentTime, true);
+                }
+            }, 2000);
+        });
+
+        // 修改：增加 forceScroll 参数，用于跳过用户滚动拦截
+        function updateLyricsScroll(currentTime, forceScroll = false) {
             if (parsedLyrics.length === 0) return;
             
             let activeIndex = -1;
@@ -641,20 +667,33 @@
             
             if (activeIndex !== -1) {
                 const allLines = lyricsWrapper.querySelectorAll('.lyric-line');
-                allLines.forEach(line => line.classList.remove('active'));
                 
                 const activeLine = document.getElementById(`lrc-${activeIndex}`);
-                if (activeLine && !activeLine.classList.contains('active')) {
+                if (activeLine) {
+                    // 1. 任何情况下都要保持实时高亮当前播放的歌词行颜色外观
+                    allLines.forEach(line => line.classList.remove('active'));
                     activeLine.classList.add('active');
-                    const containerHeight = lyricsWrapper.clientHeight;
-                    const lineOffsetTop = activeLine.offsetTop;
-                    const lineHeight = activeLine.clientHeight;
                     
-                    // 丝滑滚动到容器中央
-                    lyricsWrapper.scrollTo({
-                        top: lineOffsetTop - (containerHeight / 2) + (lineHeight / 2),
-                        behavior: 'smooth'
-                    });
+                    // 2. 判定滚动追踪逻辑：当且仅当 [用户没有手动滑动歌词] 或者 [接收到强制回正指令 forceScroll] 时才执行容器位移
+                    if (!isUserScrolling || forceScroll) {
+                        const containerHeight = lyricsWrapper.clientHeight;
+                        const lineOffsetTop = activeLine.offsetTop;
+                        const lineHeight = activeLine.clientHeight;
+                        
+                        // 临时将 isUserScrolling 置为 true，防止系统的 scrollTo 位移行为被上方的 scroll 监听误当成用户在划动
+                        const prevScrollState = isUserScrolling;
+                        isUserScrolling = true;
+
+                        lyricsWrapper.scrollTo({
+                            top: lineOffsetTop - (containerHeight / 2) + (lineHeight / 2),
+                            behavior: 'smooth'
+                        });
+
+                        // 动画开始后短暂延迟，放开保护，恢复原有的滚动拦截监测状态
+                        setTimeout(() => {
+                            isUserScrolling = prevScrollState;
+                        }, 50);
+                    }
                 }
             }
         }
@@ -715,7 +754,7 @@
             if (!isNaN(audio.duration)) { 
                 progressBar.style.width = `${(audio.currentTime / audio.duration) * 100}%`; 
                 currentTimeUI.innerText = formatTime(audio.currentTime); 
-                updateLyricsScroll(audio.currentTime);
+                updateLyricsScroll(audio.currentTime, false); // 正常播放更新时不强制回正
             } 
         });
         
