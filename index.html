@@ -121,45 +121,48 @@
         .wyy-btn:hover { background: #7A695E; transform: scale(1.05); }
         .wyy-btn:disabled { background: #ccc; cursor: not-allowed; transform: none; }
 
-        /* 右侧组合容器：歌单与歌词垂直排列 */
-        .right-container {
-            display: flex; flex-direction: column; gap: 20px; width: 340px; height: 500px; flex-shrink: 0;
-        }
-
-        /* 歌单面板透亮毛玻璃效果 */
-        .playlist-container {
+        /* 电脑端独立模块：中间高大的歌词区域 */
+        .middle-lyrics-container {
             background: rgba(255, 255, 255, 0.4); 
             backdrop-filter: blur(20px) saturate(140%);
             -webkit-backdrop-filter: blur(20px) saturate(140%);
-            padding: 20px; border-radius: 24px; flex: 1;
+            padding: 25px 20px; border-radius: 28px; 
+            width: 340px; height: 500px; flex-shrink: 0;
             box-shadow: 0 15px 35px rgba(90, 75, 65, 0.05); border: 2px solid rgba(255, 255, 255, 0.4);
-            display: flex; flex-direction: column; overflow: hidden;
+            display: flex; flex-direction: column; overflow: hidden; text-align: center; box-sizing: border-box;
+        }
+        
+        .lyrics-title-bar {
+            font-size: 0.9rem; font-weight: bold; padding-bottom: 10px; margin-bottom: 10px;
+            border-bottom: 2px solid rgba(90, 75, 65, 0.15); opacity: 0.8; letter-spacing: 1px;
         }
 
-        /* 歌词面板设计 */
-        .lyrics-container {
-            background: rgba(255, 255, 255, 0.35);
-            backdrop-filter: blur(20px) saturate(140%);
-            -webkit-backdrop-filter: blur(20px) saturate(140%);
-            padding: 15px; border-radius: 24px; height: 160px;
-            box-shadow: 0 10px 25px rgba(90, 75, 65, 0.05); border: 2px solid rgba(255, 255, 255, 0.3);
-            display: flex; flex-direction: column; overflow: hidden; text-align: center; position: relative;
-        }
         .lyrics-wrapper {
             overflow-y: auto; flex-grow: 1; scroll-behavior: smooth; padding: 10px 0;
         }
         .lyrics-wrapper::-webkit-scrollbar { width: 0px; display: none; }
         .lyric-line {
-            font-size: 0.85rem; padding: 6px 10px; line-height: 1.4; opacity: 0.4; transition: all 0.3s ease;
+            font-size: 0.88rem; padding: 8px 10px; line-height: 1.5; opacity: 0.35; transition: all 0.3s ease;
         }
         .lyric-line.active {
-            opacity: 1; font-weight: bold; font-size: 0.95rem; color: #7A695E; transform: scale(1.02);
+            opacity: 1; font-weight: bold; font-size: 1.02rem; color: #7A695E; transform: scale(1.02);
         }
 
-        .playlist-tabs { display: flex; gap: 8px; margin-bottom: 15px; border-bottom: 2px solid rgba(90, 75, 65, 0.15); padding-bottom: 8px; justify-content: space-between; }
+        /* 电脑端独立模块：右侧高大的歌单区域 */
+        .right-playlist-container {
+            background: rgba(255, 255, 255, 0.4); 
+            backdrop-filter: blur(20px) saturate(140%);
+            -webkit-backdrop-filter: blur(20px) saturate(140%);
+            padding: 25px 20px; border-radius: 28px; 
+            width: 340px; height: 500px; flex-shrink: 0;
+            box-shadow: 0 15px 35px rgba(90, 75, 65, 0.05); border: 2px solid rgba(255, 255, 255, 0.4);
+            display: flex; flex-direction: column; overflow: hidden; box-sizing: border-box;
+        }
+
+        .playlist-tabs { display: flex; gap: 8px; margin-bottom: 15px; border-bottom: 2px solid rgba(90, 75, 65, 0.15); padding-bottom: 10px; justify-content: space-between; }
         .tab-btn { background: none; border: none; font-size: 0.82rem; font-weight: bold; color: var(--text-color); opacity: 0.6; cursor: pointer; padding: 0 2px; transition: opacity 0.2s; white-space: nowrap; }
         .tab-btn.active { opacity: 1; position: relative; }
-        .tab-btn.active::after { content: ''; position: absolute; bottom: -10px; left: 0; width: 100%; height: 3px; background: var(--text-color); border-radius: 2px; }
+        .tab-btn.active::after { content: ''; position: absolute; bottom: -12px; left: 0; width: 100%; height: 3px; background: var(--text-color); border-radius: 2px; }
 
         .track-list { list-style: none; padding: 0; margin: 0; overflow-y: auto; flex-grow: 1; }
         .track-list::-webkit-scrollbar { width: 6px; }
@@ -206,9 +209,9 @@
         @media (max-width: 768px) {
             .bg-layer { background: url('img/xiaoermo.jpg') no-repeat center center; background-size: cover !important; }
             .main-wrapper { flex-direction: column; justify-content: flex-start; align-items: center; gap: 25px; padding: 25px 15px 140px; }
-            .player-container, .right-container { width: 100%; max-width: 340px; box-sizing: border-box; }
-            .right-container { height: auto; }
-            .playlist-container { height: 260px; }
+            .player-container, .middle-lyrics-container, .right-playlist-container { width: 100%; max-width: 340px; box-sizing: border-box; }
+            .middle-lyrics-container { height: 180px; padding: 15px; border-radius: 24px; }
+            .right-playlist-container { height: 280px; padding: 20px; border-radius: 24px; }
             .character-box { position: fixed !important; width: 90px; height: 145px; right: 10px; bottom: 10px; opacity: 0.95; z-index: 999999 !important; pointer-events: auto; }
             .mahiru-character { background-size: contain; }
             .character-box:hover .mahiru-character { transform: none !important; }
@@ -267,23 +270,22 @@
             <audio id="myAudio"></audio>
         </div>
 
-        <div class="right-container">
-            <div class="playlist-container">
-                <div class="playlist-tabs">
-                    <button class="tab-btn active" id="tabMahiru">真昼歌单 (<span id="mahiruCount">0</span>)</button>
-                    <button class="tab-btn" id="tabOnline">内置歌单 (<span id="onlineCount">0</span>)</button>
-                    <button class="tab-btn" id="tabLocal">本地文件夹 (<span id="localCount">0</span>)</button>
-                </div>
-                <ul class="track-list" id="trackList">
-                    <li style="color: #5A4B41; text-align: center; padding-top: 50px; opacity:0.6;">正在加载网页歌单...</li>
-                </ul>
+        <div class="middle-lyrics-container">
+            <div class="lyrics-title-bar">L Y R I C S</div>
+            <div class="lyrics-wrapper" id="lyricsWrapper">
+                <div class="lyric-line" style="opacity: 0.6; padding-top: 140px;">🎵 治愈音乐盒 · 伴你度过每一天</div>
             </div>
+        </div>
 
-            <div class="lyrics-container">
-                <div class="lyrics-wrapper" id="lyricsWrapper">
-                    <div class="lyric-line" style="opacity: 0.6; padding-top: 40px;">🎵 治愈音乐盒 · 伴你度过每一天</div>
-                </div>
+        <div class="right-playlist-container">
+            <div class="playlist-tabs">
+                <button class="tab-btn active" id="tabMahiru">真昼歌单 (<span id="mahiruCount">0</span>)</button>
+                <button class="tab-btn" id="tabOnline">内置歌单 (<span id="onlineCount">0</span>)</button>
+                <button class="tab-btn" id="tabLocal">本地文件夹 (<span id="localCount">0</span>)</button>
             </div>
+            <ul class="track-list" id="trackList">
+                <li style="color: #5A4B41; text-align: center; padding-top: 50px; opacity:0.6;">正在加载网页歌单...</li>
+            </ul>
         </div>
     </div>
 
@@ -520,7 +522,6 @@
         async function fetchLyrics(songId) {
             clearLyrics("正在加载歌词...");
             try {
-                // 直接使用网易云公开无需凭证的歌词获取 API 接口
                 const res = await fetch(`https://music.163.com/api/song/media?id=${songId}`);
                 if (!res.ok) throw new Error();
                 const data = await res.json();
@@ -576,7 +577,7 @@
 
         function clearLyrics(msg) {
             parsedLyrics = [];
-            lyricsWrapper.innerHTML = `<div class="lyric-line" style="opacity: 0.6; padding-top: 40px;">${msg}</div>`;
+            lyricsWrapper.innerHTML = `<div class="lyric-line" style="opacity: 0.6; padding-top: 140px;">${msg}</div>`;
         }
 
         function updateLyricsScroll(currentTime) {
@@ -699,7 +700,6 @@
 
                     playAudio();
                     
-                    // 【优化】：如果后端返回的数据包里包含了 lyric 字段，直接读取它；否则前端去兜底抓取
                     if (data.lyric) {
                         parseLyricText(data.lyric);
                     } else {
@@ -708,7 +708,6 @@
                     wyyIdInput.value = '';
                 } else { showBubbleWithTimer("しいなまひる:点播失败：" + data.msg); }
             } catch (err) { 
-                // 后端接口若没做变动或连接失败时，前端自己继续去拉取并渲染歌词，确保功能不挂掉
                 fetchLyrics(songId);
                 showBubbleWithTimer("しいなまひる:无法连接到云端 service，请确认 Vercel 后端部署状态？"); 
             } 
