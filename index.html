@@ -121,14 +121,39 @@
         .wyy-btn:hover { background: #7A695E; transform: scale(1.05); }
         .wyy-btn:disabled { background: #ccc; cursor: not-allowed; transform: none; }
 
+        /* 右侧组合容器：歌单与歌词垂直排列 */
+        .right-container {
+            display: flex; flex-direction: column; gap: 20px; width: 340px; height: 500px; flex-shrink: 0;
+        }
+
         /* 歌单面板透亮毛玻璃效果 */
         .playlist-container {
             background: rgba(255, 255, 255, 0.4); 
             backdrop-filter: blur(20px) saturate(140%);
             -webkit-backdrop-filter: blur(20px) saturate(140%);
-            padding: 25px; border-radius: 28px; height: 380px; width: 340px; flex-shrink: 0;
+            padding: 20px; border-radius: 24px; flex: 1;
             box-shadow: 0 15px 35px rgba(90, 75, 65, 0.05); border: 2px solid rgba(255, 255, 255, 0.4);
-            display: flex; flex-direction: column;
+            display: flex; flex-direction: column; overflow: hidden;
+        }
+
+        /* 歌词面板设计 */
+        .lyrics-container {
+            background: rgba(255, 255, 255, 0.35);
+            backdrop-filter: blur(20px) saturate(140%);
+            -webkit-backdrop-filter: blur(20px) saturate(140%);
+            padding: 15px; border-radius: 24px; height: 160px;
+            box-shadow: 0 10px 25px rgba(90, 75, 65, 0.05); border: 2px solid rgba(255, 255, 255, 0.3);
+            display: flex; flex-direction: column; overflow: hidden; text-align: center; position: relative;
+        }
+        .lyrics-wrapper {
+            overflow-y: auto; flex-grow: 1; scroll-behavior: smooth; padding: 10px 0;
+        }
+        .lyrics-wrapper::-webkit-scrollbar { width: 0px; display: none; }
+        .lyric-line {
+            font-size: 0.85rem; padding: 6px 10px; line-height: 1.4; opacity: 0.4; transition: all 0.3s ease;
+        }
+        .lyric-line.active {
+            opacity: 1; font-weight: bold; font-size: 0.95rem; color: #7A695E; transform: scale(1.02);
         }
 
         .playlist-tabs { display: flex; gap: 8px; margin-bottom: 15px; border-bottom: 2px solid rgba(90, 75, 65, 0.15); padding-bottom: 8px; justify-content: space-between; }
@@ -181,8 +206,9 @@
         @media (max-width: 768px) {
             .bg-layer { background: url('img/xiaoermo.jpg') no-repeat center center; background-size: cover !important; }
             .main-wrapper { flex-direction: column; justify-content: flex-start; align-items: center; gap: 25px; padding: 25px 15px 140px; }
-            .player-container, .playlist-container { width: 100%; max-width: 340px; box-sizing: border-box; }
-            .playlist-container { height: 320px; }
+            .player-container, .right-container { width: 100%; max-width: 340px; box-sizing: border-box; }
+            .right-container { height: auto; }
+            .playlist-container { height: 260px; }
             .character-box { position: fixed !important; width: 90px; height: 145px; right: 10px; bottom: 10px; opacity: 0.95; z-index: 999999 !important; pointer-events: auto; }
             .mahiru-character { background-size: contain; }
             .character-box:hover .mahiru-character { transform: none !important; }
@@ -202,7 +228,7 @@
 
     <div id="mobileTouchUnlock">
         <div class="unlock-box">
-            <p>❀ 欢迎来到しいなまひ还原的音乐盒 ❀<br><small style="color:#888; font-weight:normal;">点击下方按钮解锁手机端音频并激活防长亮锁</small></p>
+            <p>❀ 欢迎来到しいなまひ还原的音乐盒 ❀<br><small style="color:#888; font-weight:normal;">点击下方按钮解锁手机端音频</small></p>
             <button id="unlockBtn">进入音乐盒</button>
         </div>
     </div>
@@ -238,18 +264,26 @@
                 <input type="text" id="wyyIdInput" class="wyy-input" placeholder="输入网易云歌曲 ID">
                 <button id="wyyDlBtn" class="wyy-btn">直接播放</button>
             </div>
-            <audio id="myAudio" preload="auto" crossorigin="anonymous"></audio>
+            <audio id="myAudio"></audio>
         </div>
 
-        <div class="playlist-container">
-            <div class="playlist-tabs">
-                <button class="tab-btn active" id="tabMahiru">真昼歌单 (<span id="mahiruCount">0</span>)</button>
-                <button class="tab-btn" id="tabOnline">内置歌单 (<span id="onlineCount">0</span>)</button>
-                <button class="tab-btn" id="tabLocal">本地文件夹 (<span id="localCount">0</span>)</button>
+        <div class="right-container">
+            <div class="playlist-container">
+                <div class="playlist-tabs">
+                    <button class="tab-btn active" id="tabMahiru">真昼歌单 (<span id="mahiruCount">0</span>)</button>
+                    <button class="tab-btn" id="tabOnline">内置歌单 (<span id="onlineCount">0</span>)</button>
+                    <button class="tab-btn" id="tabLocal">本地文件夹 (<span id="localCount">0</span>)</button>
+                </div>
+                <ul class="track-list" id="trackList">
+                    <li style="color: #5A4B41; text-align: center; padding-top: 50px; opacity:0.6;">正在加载网页歌单...</li>
+                </ul>
             </div>
-            <ul class="track-list" id="trackList">
-                <li style="color: #5A4B41; text-align: center; padding-top: 50px; opacity:0.6;">正在加载网页歌单...</li>
-            </ul>
+
+            <div class="lyrics-container">
+                <div class="lyrics-wrapper" id="lyricsWrapper">
+                    <div class="lyric-line" style="opacity: 0.6; padding-top: 40px;">🎵 治愈音乐盒 · 伴你度过每一天</div>
+                </div>
+            </div>
         </div>
     </div>
 
@@ -291,6 +325,8 @@
         const onlineCountUI = document.getElementById('onlineCount');
         const localCountUI = document.getElementById('localCount');
 
+        const lyricsWrapper = document.getElementById('lyricsWrapper');
+
         let currentMode = 'mahiru', mahiruSongs = [], onlineSongs = [], localSongs = [], currentIndex = 0;        
         const mobileTouchUnlock = document.getElementById('mobileTouchUnlock');
         const unlockBtn = document.getElementById('unlockBtn');
@@ -298,47 +334,29 @@
         let playMode = 'loop'; 
 
         // 全局状态跟踪当前播放的歌曲信息
-        let currentPlayingInfo = { name: "", url: "" };
+        let currentPlayingInfo = { name: "", url: "", id: null };
+        let parsedLyrics = []; // 解析后的歌词数组 [{time: 秒数, text: "歌词"}]
 
-        // --- 新增变量：屏幕唤醒锁对象 ---
-        let wakeLock = null;
+        // 获取基于时间的动态问候语
+        function getTimeGreeting() {
+            const hour = new Date().getHours();
+            if (hour >= 5 && hour < 12) {
+                return "上午好！打起精神，今天也是美好的一天呢。";
+            } else if (hour >= 12 && hour < 18) {
+                return "下午好，累了的话就听首歌放松一下吧。";
+            } else {
+                return "晚上好，夜深了，听完这首歌就早点休息吧。";
+            }
+        }
 
         function isMobileDevice() {
             return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) || window.innerWidth <= 768;
         }
 
-        // --- 新增函数：请求锁定屏幕不息屏 ---
-        async function requestWakeLock() {
-            if ('wakeLock' in navigator) {
-                try {
-                    wakeLock = await navigator.wakeLock.request('screen');
-                    console.log('❀ 成功激活防息屏锁，页面将保持长亮 ❀');
-                    // 监听锁被系统主动释放时的重新挂载（比如用户切出去又切回来）
-                    wakeLock.addEventListener('release', () => {
-                        console.log('防息屏锁已被释放');
-                    });
-                } catch (err) {
-                    console.error('防息屏锁定失败:', err);
-                }
-            } else {
-                console.log('当前浏览器不支持浏览器原生防息屏 API');
-            }
-        }
-
-        // --- 新增函数：当页面重新可见时（后台切回前台），重新补锁 ---
-        document.addEventListener('visibilitychange', async () => {
-            if (wakeLock !== null && document.visibilityState === 'visible') {
-                await requestWakeLock();
-            }
-        });
-
         function unlockMobileAudio() {
-            audio.play().then(() => { 
-                audio.pause(); 
-                requestWakeLock(); // 用户点击允许时，顺便开启防息屏锁
-            }).catch(e => console.log('激活中...'));
+            audio.play().then(() => { audio.pause(); }).catch(e => console.log('激活中...'));
             mobileTouchUnlock.style.display = 'none';
-            showBubbleWithTimer("今天想听什么歌呢？");
+            showBubbleWithTimer(getTimeGreeting());
             updateMediaSession(); 
         }
         unlockBtn.addEventListener('click', unlockMobileAudio);
@@ -351,10 +369,10 @@
                 const songsData = await response.json();
                 
                 if(songsData.mahiruSongs) {
-                    mahiruSongs = songsData.mahiruSongs.map(song => ({ name: song.title, url: supabaseBaseUrl + encodeURIComponent(song.file) }));
+                    mahiruSongs = songsData.mahiruSongs.map(song => ({ name: song.title, url: supabaseBaseUrl + encodeURIComponent(song.file), id: song.wyyId || null }));
                 }
                 if(songsData.onlineSongs) {
-                    onlineSongs = songsData.onlineSongs.map(song => ({ name: song.title, url: supabaseBaseUrl + encodeURIComponent(song.file) }));
+                    onlineSongs = songsData.onlineSongs.map(song => ({ name: song.title, url: supabaseBaseUrl + encodeURIComponent(song.file), id: song.wyyId || null }));
                 }
                 
                 mahiruCountUI.innerText = mahiruSongs.length;
@@ -476,18 +494,119 @@
             if (currentMode === 'local') {
                 const fileHandle = activeList[currentIndex]; const file = await fileHandle.getFile();
                 audio.src = URL.createObjectURL(file); songTitle.innerText = file.name.replace(/\.[^/.]+$/, ""); songArtist.innerText = "本地音乐";
-                currentPlayingInfo = { name: songTitle.innerText, url: "" }; 
+                currentPlayingInfo = { name: songTitle.innerText, url: "", id: null }; 
+                clearLyrics("本地音乐暂无歌词");
             } else {
                 const song = activeList[currentIndex]; audio.src = song.url; songTitle.innerText = song.name; 
                 songArtist.innerText = (currentMode === 'mahiru') ? "しいなまひる 专属" : "网页内置歌单";
-                currentPlayingInfo = { name: song.name, url: song.url };
+                currentPlayingInfo = { name: song.name, url: song.url, id: song.id };
+                
+                // 如果配置了网易云ID，则去自动请求歌词
+                if(song.id) {
+                    fetchLyrics(song.id);
+                } else {
+                    clearLyrics("未关联歌词 ID");
+                }
             }
             updateActiveHighlight(); progressBar.style.width = '0%'; currentTimeUI.innerText = '00:00';
             
-            // 加载切歌时自动注入 MediaSession 系统级任务栏元数据
             updateMediaSession();
 
             if (autoPlay) { playAudio(); } else { pauseAudio(); }
+        }
+
+        /* ================= 歌词获取与解析核心逻辑 ================= */
+        async function fetchLyrics(songId) {
+            clearLyrics("正在加载歌词...");
+            try {
+                // 使用官方直接可外链调用的网易云歌词公开 API 节点
+                const res = await fetch(`https://music.163.com/api/song/media?id=${songId}`);
+                if (!res.ok) throw new Error();
+                const data = await res.json();
+                
+                if (data && data.lyric) {
+                    parseLyricText(data.lyric);
+                } else {
+                    clearLyrics("暂无纯歌词数据");
+                }
+            } catch (err) {
+                // 备用兜底策略（如果官方由于某些限制拒绝跨域，通过Vercel或原服务进行代理）
+                clearLyrics("歌词加载失败或暂无歌词");
+            }
+        }
+
+        function parseLyricText(lyricStr) {
+            parsedLyrics = [];
+            const lines = lyricStr.split('\n');
+            const timeReg = /\[(\d+):(\d+)\.(\d+)\]/;
+            
+            lines.forEach(line => {
+                const match = timeReg.exec(line);
+                if (match) {
+                    const minutes = parseInt(match[1]);
+                    const seconds = parseInt(match[2]);
+                    const milliseconds = parseInt(match[3]);
+                    // 换算成秒数时间轴
+                    const time = minutes * 60 + seconds + (milliseconds / 1000);
+                    const text = line.replace(timeReg, '').trim();
+                    if (text) {
+                        parsedLyrics.push({ time, text });
+                    }
+                }
+            });
+
+            // 按照时间由小到大排序
+            parsedLyrics.sort((a, b) => a.time - b.time);
+            renderLyricsUI();
+        }
+
+        function renderLyricsUI() {
+            if (parsedLyrics.length === 0) {
+                clearLyrics("歌词解析空");
+                return;
+            }
+            lyricsWrapper.innerHTML = '';
+            parsedLyrics.forEach((item, index) => {
+                const div = document.createElement('div');
+                div.className = 'lyric-line';
+                div.id = `lrc-${index}`;
+                div.innerText = item.text;
+                lyricsWrapper.appendChild(div);
+            });
+            lyricsWrapper.scrollTop = 0;
+        }
+
+        function clearLyrics(msg) {
+            parsedLyrics = [];
+            lyricsWrapper.innerHTML = `<div class="lyric-line" style="opacity: 0.6; padding-top: 40px;">${msg}</div>`;
+        }
+
+        function updateLyricsScroll(currentTime) {
+            if (parsedLyrics.length === 0) return;
+            
+            let activeIndex = -1;
+            for (let i = 0; i < parsedLyrics.length; i++) {
+                if (currentTime >= parsedLyrics[i].time) {
+                    activeIndex = i;
+                } else {
+                    break;
+                }
+            }
+            
+            if (activeIndex !== -1) {
+                const allLines = lyricsWrapper.querySelectorAll('.lyric-line');
+                allLines.forEach(line => line.classList.remove('active'));
+                
+                const activeLine = document.getElementById(`lrc-${activeIndex}`);
+                if (activeLine && !activeLine.classList.contains('active')) {
+                    activeLine.classList.add('active');
+                    // 让歌词包裹器平滑滚动到当前高亮行中央
+                    const containerHeight = lyricsWrapper.clientHeight;
+                    const lineOffsetTop = activeLine.offsetTop;
+                    const lineHeigh = activeLine.clientHeight;
+                    lyricsWrapper.scrollTop = lineOffsetTop - (containerHeight / 2) + (lineHeigh / 2);
+                }
+            }
         }
 
         function playAudio() { 
@@ -544,13 +663,22 @@
         });
 
         function formatTime(secs) { if (isNaN(secs)) return '00:00'; const m = Math.floor(secs / 60), s = Math.floor(secs % 60); return `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`; }
-        audio.addEventListener('timeupdate', () => { if (!isNaN(audio.duration)) { progressBar.style.width = `${(audio.currentTime / audio.duration) * 100}%`; currentTimeUI.innerText = formatTime(audio.currentTime); } });
+        
+        audio.addEventListener('timeupdate', () => { 
+            if (!isNaN(audio.duration)) { 
+                progressBar.style.width = `${(audio.currentTime / audio.duration) * 100}%`; 
+                currentTimeUI.innerText = formatTime(audio.currentTime); 
+                // 触发歌词滚动同步
+                updateLyricsScroll(audio.currentTime);
+            } 
+        });
+        
         audio.addEventListener('loadedmetadata', () => { totalTimeUI.innerText = formatTime(audio.duration); });
         progressBarContainer.addEventListener('click', (e) => { if (isNaN(audio.duration)) return; audio.currentTime = (e.offsetX / progressBarContainer.clientWidth) * audio.duration; });
 
         let bubbleTimer = null;
-        function showBubbleWithTimer(text) { if (bubbleTimer) clearTimeout(bubbleTimer); bubble.innerText = text; bubble.style.opacity = '1'; bubbleTimer = setTimeout(() => { bubble.style.opacity = '0'; }, 4000); }
-        mahiruSkin.addEventListener('click', () => { const q = ["别突然戳我呀...", "听音乐的时候要保持好心情哦。", "这首歌，我也很喜欢呢。"]; showBubbleWithTimer(q[Math.floor(Math.random() * q.length)]); });
+        function showBubbleWithTimer(text) { if (bubbleTimer) clearTimeout(bubbleTimer); bubble.innerText = text; bubble.style.opacity = '1'; bubbleTimer = setTimeout(() => { bubble.style.opacity = '0'; }, 5000); }
+        mahiruSkin.addEventListener('click', () => { const q = ["别突然戳我呀...", "听音乐的时候要保持好心情哦。", "这首歌，我也很喜欢呢。", getTimeGreeting()]; showBubbleWithTimer(q[Math.floor(Math.random() * q.length)]); });
 
         wyyDlBtn.addEventListener('click', async () => {
             const songId = wyyIdInput.value.trim();
@@ -571,12 +699,18 @@
                     songTitle.innerText = data.songName;
                     songArtist.innerText = data.artistName || "网易云在线点播";
                     
-                    currentPlayingInfo = { name: data.songName, url: data.audioUrl };
+                    currentPlayingInfo = { name: data.songName, url: data.audioUrl, id: songId };
 
                     playAudio();
+                    // 网易云搜索点播成功后，直接调取歌词
+                    fetchLyrics(songId);
                     wyyIdInput.value = '';
                 } else { showBubbleWithTimer("しいなまひる:点播失败：" + data.msg); }
-            } catch (err) { showBubbleWithTimer("しいなまひる:无法连接到云端 service，请确认 Vercel 后端部署状态？"); } 
+            } catch (err) { 
+                // 点播接口由于跨域或未搭建时，仍然直接去拉歌词
+                fetchLyrics(songId);
+                showBubbleWithTimer("しいなまひる:无法连接到云端 service，请确认 Vercel 后端部署状态？"); 
+            } 
             finally { wyyDlBtn.innerText = "直接播放"; wyyDlBtn.disabled = false; }
         });
 
@@ -644,34 +778,27 @@
         }
 
         /* ================= Media Session 后台/锁屏联动 ================= */
-        // 重构：确保切歌或更新状态时能够重新刷新全局系统控制句柄，使其在后台不受休眠机制影响
         function updateMediaSession() {
             if ('mediaSession' in navigator) {
-                try {
-                    navigator.mediaSession.metadata = new MediaMetadata({
-                        title: songTitle.innerText,
-                        artist: songArtist.innerText,
-                        album: 'しいなまひる的治愈音乐盒',
-                        artwork: [{ src: 'img/changpian.jpg', sizes: '512x512', type: 'image/jpeg' }]
-                    });
-                    
-                    // 重新注册系统底层钩子：锁屏或通知栏的 播放/暂停/上一首/下一首
-                    navigator.mediaSession.setActionHandler('play', () => { playAudio(); });
-                    navigator.mediaSession.setActionHandler('pause', () => { pauseAudio(); });
-                    navigator.mediaSession.setActionHandler('previoustrack', () => { handlePrevSong(); });
-                    navigator.mediaSession.setActionHandler('nexttrack', () => { handleNextSong(false); });
-                    
-                    console.log("MediaSession 锁屏控制挂载成功！");
-                } catch(e) {
-                    console.log("MediaSession 挂载出错：", e);
-                }
+                navigator.mediaSession.metadata = new MediaMetadata({
+                    title: songTitle.innerText,
+                    artist: songArtist.innerText,
+                    album: 'しいなまひる的治愈音乐盒',
+                    artwork: [{ src: 'img/changpian.jpg', sizes: '512x512', type: 'image/jpeg' }]
+                });
+                navigator.mediaSession.setActionHandler('play', () => { playAudio(); });
+                navigator.mediaSession.setActionHandler('pause', () => { pauseAudio(); });
+                navigator.mediaSession.setActionHandler('previoustrack', () => { handlePrevSong(); });
+                navigator.mediaSession.setActionHandler('nexttrack', () => { handleNextSong(false); });
             }
         }
 
+        // 初始化网页初次加载时的问候
         window.addEventListener('DOMContentLoaded', () => {
             initOnlinePlaylist();
-            // 尝试在PC端直接请求长亮锁
-            requestWakeLock();
+            setTimeout(() => {
+                showBubbleWithTimer(getTimeGreeting());
+            }, 1000);
         });
     </script>
 </body>
