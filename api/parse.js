@@ -13,12 +13,11 @@ export default async function handler(req, res) {
 
     // ==========================================
     // 🔒 安全设计：直接从 Vercel 环境变量中读取你的 Cookie
-    // 这样不用把长长的 Cookie 暴露在公开代码里，更加安全！
     // ==========================================
     const WYY_COOKIE = process.env.WYY_COOKIE || ""; 
 
     try {
-        // 调用移动端高品质接口获取包含你账号 VIP 权限的直链
+        // 1. 调用移动端高品质接口获取包含你账号 VIP 权限的直链
         const fallbackUrl = `https://music.163.com/api/song/enhance/player/url?id=${songId}&ids=[${songId}]&br=320000`;
         const fallbackRes = await axios.get(fallbackUrl, {
             headers: {
@@ -31,28 +30,47 @@ export default async function handler(req, res) {
         let audioUrl = fallbackRes.data?.data?.[0]?.url;
         let isVip = false;
 
-        // 如果获取到了歌，且带有试听标记（说明这个Cookie失效了或者非VIP看不了完整版），进行通用直连兜底
+        // 如果获取到了歌，且带有试听标记，进行通用直连兜底
         if (!audioUrl || fallbackRes.data?.data?.[0]?.freeTrialInfo) {
             audioUrl = `https://music.163.com/song/media/outer/url?id=${songId}.mp3`;
         } else {
             isVip = true; 
         }
 
-        // 云端简单模拟一下获取歌名
+        // 2. 云端获取歌名与歌手信息
         const detailUrl = `https://music.163.com/api/v1/song/detail/?id=${songId}&ids=%5B${songId}%5D`;
         const detailRes = await axios.get(detailUrl).catch(() => null);
         let songName = `网易云点播_${songId}`;
         let artistName = isVip ? "云端高品质通道 (VIP)" : "官方通用直连通道";
+        
         if (detailRes?.data?.songs?.[0]) {
             songName = detailRes.data.songs[0].name;
             artistName = detailRes.data.songs[0].ar.map(a => a.name).join(', ') + (isVip ? " [VIP]" : "");
         }
 
+        // ==========================================
+        // 🌟 新增：云端请求网易云官方歌词接口
+        // ==========================================
+        const lyricUrl = `https://music.163.com/api/song/lyric?id=${songId}&lv=1&kv=1&tv=-1`;
+        const lyricRes = await axios.get(lyricUrl).catch(() => null);
+        let lyricText = "";
+
+        // 判断接口是否成功返回了常规歌词 (lrc.lyric)
+        if (lyricRes?.data?.lrc?.lyric) {
+            lyricText = lyricRes.data.lrc.lyric;
+        } else if (lyricRes?.data?.uncons) {
+            lyricText = "[00:00.00] 纯音乐，请享受旋律 ~";
+        } else {
+            lyricText = "[00:00.00] 暂无歌词数据";
+        }
+
+        // 3. 返回包含歌词在内的完整数据包
         return res.status(200).json({
             success: true,
             songName: songName,
             artistName: artistName,
-            audioUrl: audioUrl 
+            audioUrl: audioUrl,
+            lyric: lyricText // 👈 把这个新字段带给前端 index.html 
         });
     } catch (error) {
         return res.status(500).json({ success: false, msg: error.message });
