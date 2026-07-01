@@ -97,29 +97,35 @@
         .song-title { font-size: 1.15rem; font-weight: bold; margin-bottom: 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
         .song-artist { font-size: 0.85rem; opacity: 0.75; margin-bottom: 15px; }
 
-        .progress-wrapper { margin-bottom: 20px; padding: 0 5px; }
+        .progress-wrapper { margin-bottom: 12px; padding: 0 5px; }
         .progress-bar-container { width: 100%; height: 6px; background: rgba(90, 75, 65, 0.15); border-radius: 10px; cursor: pointer; position: relative; margin-bottom: 6px; }
         .progress-bar { height: 100%; width: 0%; background: linear-gradient(90deg, var(--accent-gold), var(--text-color)); border-radius: 10px; position: absolute; top: 0; left: 0; transition: width 0.1s linear; }
         .time-info { display: flex; justify-content: space-between; font-size: 0.75rem; opacity: 0.7; }
 
+        /* 新增：可视化 Canvas 容器样式 */
+        .visualizer-box { width: 100%; height: 36px; margin-bottom: 12px; border-radius: 8px; overflow: hidden; }
+        #visualizerCanvas { width: 100%; height: 100%; display: block; }
+
         /* 播放控制栏容器 */
-        .controls { display: flex; justify-content: center; align-items: center; gap: 10px; margin-bottom: 15px; }
+        .controls { display: flex; justify-content: center; align-items: center; gap: 8px; margin-bottom: 15px; flex-wrap: wrap; }
         .controls button { background: var(--text-color); color: #fff; border: none; cursor: pointer; transition: all 0.2s ease; box-shadow: 0 4px 10px rgba(90, 75, 65, 0.2); }
         .btn-main { padding: 12px 22px; font-size: 1rem; border-radius: 50px; }
         .btn-side { padding: 10px 14px; font-size: 0.9rem; border-radius: 50%; }
-        /* 模式与新按钮小修饰 */
         .btn-mode, .btn-current-dl { padding: 10px 12px; font-size: 0.85rem; border-radius: 50%; background: #A79284 !important; }
+        
+        /* 新增：倍速调节按钮样式 */
+        .btn-speed { padding: 10px 10px; font-size: 0.75rem; font-weight: bold; border-radius: 50%; background: #968172 !important; width: 38px; height: 38px; display: flex; justify-content: center; align-items: center; }
+        
         .controls button:hover { transform: scale(1.08); background: #7A695E; }
 
         .btn-folder { background: #A79284 !important; padding: 8px 16px; border-radius: 8px; font-size: 0.85rem; color: white; border: none; cursor: pointer; transition: background 0.2s; width: 100%; box-sizing: border-box; }
         .btn-folder:hover { background: #8B7E74; }
 
-        /* 网易云网格输入栏优化：保证粘贴按钮加入后完美居中对齐 */
+        /* 网易云网格输入栏优化 */
         .wyy-download-box { margin-top: 15px; border-top: 1px dashed var(--accent-gold); padding-top: 15px; display: flex; gap: 6px; justify-content: center; align-items: center; }
         .wyy-input { width: 50%; padding: 6px 12px; border: 1px solid var(--accent-gold); border-radius: 20px; outline: none; font-size: 0.8rem; color: var(--text-color); background: rgba(255, 255, 255, 0.4); transition: all 0.2s; }
         .wyy-input:focus { background: rgba(255, 255, 255, 0.8); border-color: var(--text-color); }
         
-        /* 新增：粘贴按钮特定样式 */
         .wyy-paste-btn { background: #A79284; color: white; border: none; width: 30px; height: 30px; border-radius: 50%; font-size: 0.85rem; cursor: pointer; display: flex; justify-content: center; align-items: center; box-shadow: 0 2px 6px rgba(90, 75, 65, 0.15); transition: all 0.2s; flex-shrink: 0; }
         .wyy-paste-btn:hover { background: #8B7E74; transform: scale(1.1); }
         
@@ -127,7 +133,7 @@
         .wyy-btn:hover { background: #7A695E; transform: scale(1.05); }
         .wyy-btn:disabled { background: #ccc; cursor: not-allowed; transform: none; }
 
-        /* 电脑端独立模块：中间高大的歌词区域 */
+        /* 中间歌词区域 */
         .middle-lyrics-container {
             background: rgba(255, 255, 255, 0.4); 
             backdrop-filter: blur(20px) saturate(140%);
@@ -143,42 +149,17 @@
             border-bottom: 2px solid rgba(90, 75, 65, 0.15); opacity: 0.8; letter-spacing: 1px;
         }
 
-        .lyrics-wrapper {
-            overflow-y: auto; flex-grow: 1; scroll-behavior: smooth; padding: 10px 0;
-        }
+        .lyrics-wrapper { overflow-y: auto; flex-grow: 1; scroll-behavior: smooth; padding: 10px 0; }
         .lyrics-wrapper::-webkit-scrollbar { width: 0px; display: none; }
 
-        /* Spotify 风格歌词行样式定义 */
         .lyric-line {
-            font-size: 0.95rem; 
-            padding: 10px 14px; 
-            line-height: 1.6; 
-            opacity: 0.4; 
-            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-            cursor: pointer;          /* 可点击手势 */
-            border-radius: 8px;
-            user-select: none;        /* 避免双击误选文本 */
-            text-align: center;
+            font-size: 0.95rem; padding: 10px 14px; line-height: 1.6; opacity: 0.4; 
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1); cursor: pointer; border-radius: 8px; user-select: none; text-align: center;
         }
-        
-        /* 鼠标悬停在非活动行时的 Spotify 提亮质感 */
-        .lyric-line:hover:not(.active) {
-            opacity: 0.75;
-            background: rgba(255, 255, 255, 0.15);
-        }
-        
-        /* 活动行高亮状态 */
-        .lyric-line.active {
-            opacity: 1; 
-            font-weight: bold; 
-            font-size: 1.1rem; 
-            color: var(--text-color);   
-            transform: scale(1.03);
-            background: rgba(255, 255, 255, 0.25);
-            box-shadow: 0 4px 12px rgba(90, 75, 65, 0.05);
-        }
+        .lyric-line:hover:not(.active) { opacity: 0.75; background: rgba(255, 255, 255, 0.15); }
+        .lyric-line.active { opacity: 1; font-weight: bold; font-size: 1.1rem; color: var(--text-color); transform: scale(1.03); background: rgba(255, 255, 255, 0.25); box-shadow: 0 4px 12px rgba(90, 75, 65, 0.05); }
 
-        /* 电脑端独立模块：右侧高大的歌单区域 */
+        /* 右侧歌单区域 */
         .right-playlist-container {
             background: rgba(255, 255, 255, 0.4); 
             backdrop-filter: blur(20px) saturate(140%);
@@ -198,20 +179,12 @@
         .track-list::-webkit-scrollbar { width: 6px; }
         .track-list::-webkit-scrollbar-thumb { background: rgba(90, 75, 65, 0.2); border-radius: 10px; }
 
-        .track-item { 
-            display: flex; justify-content: space-between; align-items: center;
-            padding: 10px 12px; border-radius: 8px; cursor: pointer; font-size: 0.85rem; 
-            transition: all 0.2s ease; margin-bottom: 4px; gap: 8px;
-        }
+        .track-item { display: flex; justify-content: space-between; align-items: center; padding: 10px 12px; border-radius: 8px; cursor: pointer; font-size: 0.85rem; transition: all 0.2s ease; margin-bottom: 4px; gap: 8px; }
         .track-item:hover { background: rgba(255, 255, 255, 0.3); }
         .track-item.active { background: var(--text-color); color: #fff; font-weight: bold; }
-
         .track-name { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; flex-grow: 1; }
         
-        .track-dl-icon { 
-            font-size: 1.05rem; cursor: pointer; padding: 2px 6px; border-radius: 4px;
-            transition: all 0.2s; color: var(--text-color); opacity: 0.6; flex-shrink: 0;
-        }
+        .track-dl-icon { font-size: 1.05rem; cursor: pointer; padding: 2px 6px; border-radius: 4px; transition: all 0.2s; color: var(--text-color); opacity: 0.6; flex-shrink: 0; }
         .track-dl-icon:hover { opacity: 1; background: rgba(255, 255, 255, 0.5); transform: scale(1.15); }
         .track-item.active .track-dl-icon { color: #fff; opacity: 0.8; }
         .track-item.active .track-dl-icon:hover { opacity: 1; background: rgba(0,0,0,0.15); }
@@ -235,7 +208,7 @@
             100% { box-shadow: 0 0 0 0 rgba(255, 255, 255, 0); }
         }
 
-        /* 移动端高级适配 */
+        /* 移动端适配 */
         @media (max-width: 768px) {
             .bg-layer { background: url('img/xiaoermo.jpg') no-repeat center center; background-size: cover !important; }
             .main-wrapper { flex-direction: column; justify-content: flex-start; align-items: center; gap: 25px; padding: 25px 15px 200px; }
@@ -245,7 +218,6 @@
             .right-playlist-container { height: 280px; padding: 20px; border-radius: 24px; }
             
             .character-box { position: fixed !important; width: 90px; height: 145px; right: 10px; bottom: 10px; opacity: 0.95; z-index: 999999 !important; pointer-events: auto; }
-            .mahiru-character { background-size: contain; }
             .character-box:hover .mahiru-character { transform: none !important; }
             .dialogue-bubble { position: fixed !important; bottom: 155px; right: 10px; font-size: 0.75rem; padding: 6px 12px; z-index: 1000000 !important; transform: translateY(0) !important; }
             .dialogue-bubble::after { right: 25px; }
@@ -285,11 +257,16 @@
                 <div class="time-info"><span id="currentTime">00:00</span><span id="totalTime">00:00</span></div>
             </div>
 
+            <div class="visualizer-box">
+                <canvas id="visualizerCanvas"></canvas>
+            </div>
+
             <div class="controls">
                 <button class="btn-side" id="prevBtn" title="上一首">⏮</button>
                 <button class="btn-main" id="playBtn">播放</button>
                 <button class="btn-side" id="nextBtn" title="下一首">⏭</button>
                 <button class="btn-mode" id="modeBtn" title="切换播放模式">🔁</button>
+                <button class="btn-speed" id="speedBtn" title="切换播放倍速">1.0X</button>
                 <button class="btn-current-dl" id="currentDlBtn" title="下载当前播放的这首歌">📥</button>
             </div>
 
@@ -300,7 +277,7 @@
                 <button id="wyyPasteBtn" class="wyy-paste-btn" title="一键粘贴剪贴板内容">📋</button>
                 <button id="wyyDlBtn" class="wyy-btn">直接播放</button>
             </div>
-            <audio id="myAudio"></audio>
+            <audio id="myAudio" crossorigin="anonymous"></audio>
         </div>
 
         <div class="middle-lyrics-container">
@@ -332,13 +309,14 @@
 
     <script>
         const VERCEL_URL = window.location.origin; 
-
         const supabaseBaseUrl = "https://dqfnxybsrbheeatzxxjg.supabase.co/storage/v1/object/public/music/";
+        
         const audio = document.getElementById('myAudio');
         const playBtn = document.getElementById('playBtn');
         const prevBtn = document.getElementById('prevBtn');
         const nextBtn = document.getElementById('nextBtn');
         const modeBtn = document.getElementById('modeBtn');
+        const speedBtn = document.getElementById('speedBtn');
         const currentDlBtn = document.getElementById('currentDlBtn'); 
         const selectFolderBtn = document.getElementById('selectFolderBtn');
         const disc = document.getElementById('disc');
@@ -362,7 +340,6 @@
         const mahiruCountUI = document.getElementById('mahiruCount');
         const onlineCountUI = document.getElementById('onlineCount');
         const localCountUI = document.getElementById('localCount');
-
         const lyricsWrapper = document.getElementById('lyricsWrapper');
 
         let currentMode = 'mahiru', mahiruSongs = [], onlineSongs = [], localSongs = [], currentIndex = 0;        
@@ -370,24 +347,28 @@
         const unlockBtn = document.getElementById('unlockBtn');
         
         let playMode = 'loop'; 
-
-        // 全局状态跟踪当前播放的歌曲信息
         let currentPlayingInfo = { name: "", url: "", id: null };
-        let parsedLyrics = []; // 解析后的歌词数组 [{time: 秒数, text: "歌词"}]
-
-        // 新增：用于控制歌词滚动判定的变量
+        let parsedLyrics = []; 
         let isUserScrolling = false;
         let userScrollTimeout = null;
 
+        // 音频淡入淡出及 Web Audio 变量
+        let fadeInterval = null;
+        let audioCtx = null;
+        let analyser = null;
+        let dataArray = null;
+        let canvasCtx = null;
+        let vCanvas = document.getElementById('visualizerCanvas');
+
+        // 倍速控制变量
+        const speedList = [1.0, 1.25, 1.5, 2.0, 0.75];
+        let currentSpeedIndex = 0;
+
         function getTimeGreeting() {
             const hour = new Date().getHours();
-            if (hour >= 5 && hour < 12) {
-                return "上午好！打起精神，今天也是美好的一天呢。";
-            } else if (hour >= 12 && hour < 18) {
-                return "下午好，累了的话就听首歌放松一下吧。";
-            } else {
-                return "晚上好，夜深了，听完这首歌就早点休息吧。";
-            }
+            if (hour >= 5 && hour < 12) return "上午好！打起精神，今天也是美好的一天呢。";
+            if (hour >= 12 && hour < 18) return "下午好，累了的话就听首歌放松一下吧。";
+            return "晚上好，夜深了，听完这首歌就早点休息吧。";
         }
 
         function isMobileDevice() {
@@ -397,15 +378,60 @@
         function unlockMobileAudio() {
             audio.play().then(() => { audio.pause(); }).catch(e => console.log('激活中...'));
             mobileTouchUnlock.style.display = 'none';
+            initVisualizer();
             showBubbleWithTimer(getTimeGreeting());
             updateMediaSession(); 
         }
         unlockBtn.addEventListener('click', unlockMobileAudio);
         mobileTouchUnlock.addEventListener('click', unlockMobileAudio);
 
+        // 初始化 Web Audio API 可视化波形
+        function initVisualizer() {
+            if (audioCtx) return;
+            try {
+                audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                analyser = audioCtx.createAnalyser();
+                analyser.fftSize = 64; 
+                const source = audioCtx.createMediaElementSource(audio);
+                source.connect(analyser);
+                analyser.connect(audioCtx.destination);
+                
+                const bufferLength = analyser.frequencyBinCount;
+                dataArray = new Uint8Array(bufferLength);
+                canvasCtx = vCanvas.getContext('2d');
+                drawVisualizerLoop();
+            } catch (e) {
+                console.error("该音频源可能由于跨域限制无法被 Web Audio 分析: ", e);
+            }
+        }
+
+        function drawVisualizerLoop() {
+            requestAnimationFrame(drawVisualizerLoop);
+            if (!analyser || !canvasCtx) return;
+
+            const width = vCanvas.width = vCanvas.clientWidth;
+            const height = vCanvas.height = vCanvas.clientHeight;
+            canvasCtx.clearRect(0, 0, width, height);
+
+            analyser.getByteFrequencyData(dataArray);
+            const barWidth = (width / dataArray.length) * 1.2;
+            let barHeight;
+            let x = 0;
+
+            for (let i = 0; i < dataArray.length; i++) {
+                barHeight = (dataArray[i] / 255) * height * 0.9;
+                // 使用柔和的主色发光填充
+                canvasCtx.fillStyle = `rgba(90, 75, 65, ${0.15 + (dataArray[i]/255) * 0.6})`;
+                canvasCtx.fillRect(x, height - barHeight, barWidth - 2, barHeight);
+                x += barWidth;
+            }
+        }
+
+        // 修改：加入动态时间戳反本地缓存机制加载配置
         async function initOnlinePlaylist() {
             try {
-                const response = await fetch('./music/list.json');
+                // 强行附加无缓存时间戳，解决由于浏览器本地缓存导致无法获取最新 list.json 配置的问题
+                const response = await fetch(`./music/list.json?_t=${Date.now()}`);
                 if (!response.ok) throw new Error('无法读取 list.json');
                 const songsData = await response.json();
                 
@@ -494,7 +520,6 @@
                 li.className = 'track-item';
                 
                 const displayName = (currentMode === 'local') ? item.name.replace(/\.[^/.]+$/, "") : item.name;
-                
                 const nameSpan = document.createElement('span');
                 nameSpan.className = 'track-name';
                 nameSpan.innerText = `${index + 1}. ${displayName}`;
@@ -503,7 +528,6 @@
                     if(e.target.classList.contains('track-dl-icon')) return; 
                     loadSong(index, true); 
                 });
-                
                 li.appendChild(nameSpan);
 
                 if (currentMode !== 'local') {
@@ -511,14 +535,12 @@
                     dlIcon.className = 'track-dl-icon';
                     dlIcon.innerHTML = '📥';
                     dlIcon.title = '下载这首音频';
-                    
                     dlIcon.addEventListener('click', (e) => {
                         e.stopPropagation(); 
                         handleAudioDownload(item);
                     });
                     li.appendChild(dlIcon);
                 }
-                
                 trackListUI.appendChild(li);
             });
             updateActiveHighlight();
@@ -532,6 +554,12 @@
         async function loadSong(index, autoPlay = false) {
             const activeList = getActiveList(); if (activeList.length === 0) return;
             currentIndex = index;
+
+            // 还原播放倍速为原速
+            currentSpeedIndex = 0;
+            audio.playbackRate = 1.0;
+            speedBtn.innerText = "1.0X";
+
             if (currentMode === 'local') {
                 const fileHandle = activeList[currentIndex]; const file = await fileHandle.getFile();
                 audio.src = URL.createObjectURL(file); songTitle.innerText = file.name.replace(/\.[^/.]+$/, ""); songArtist.innerText = "本地音乐";
@@ -549,19 +577,18 @@
                 }
             }
             updateActiveHighlight(); progressBar.style.width = '0%'; currentTimeUI.innerText = '00:00';
-            
             updateMediaSession();
 
-            if (autoPlay) { playAudio(); } else { pauseAudio(); }
+            if (autoPlay) { playAudio(); } else { pauseAudio(true); } // 载入切歌时不执行渐变淡出，直接静音断开
         }
 
         async function fetchLyrics(songId) {
             clearLyrics("正在加载歌词...");
             try {
-                const res = await fetch(`https://music.163.com/api/song/media?id=${songId}`);
+                // 修改：此处增加反本地强缓存标识符
+                const res = await fetch(`https://music.163.com/api/song/media?id=${songId}&_v=${Date.now()}`);
                 if (!res.ok) throw new Error();
                 const data = await res.json();
-                
                 if (data && data.lyric) {
                     parseLyricText(data.lyric);
                 } else {
@@ -585,12 +612,9 @@
                     const milliseconds = parseInt(match[3]);
                     const time = minutes * 60 + seconds + (milliseconds / 1000);
                     const text = line.replace(timeReg, '').trim();
-                    if (text) {
-                        parsedLyrics.push({ time, text });
-                    }
+                    if (text) parsedLyrics.push({ time, text });
                 }
             });
-
             parsedLyrics.sort((a, b) => a.time - b.time);
             renderLyricsUI();
         }
@@ -607,21 +631,15 @@
                 div.id = `lrc-${index}`;
                 div.innerText = item.text;
                 
-                // 绑定点击跳转时间事件
                 div.addEventListener('click', () => {
                     if (!isNaN(audio.duration)) {
-                        // 点击某行歌词时，强制关闭滚动拦截状态，确保页面能立刻滚过去
                         isUserScrolling = false;
                         if (userScrollTimeout) clearTimeout(userScrollTimeout);
-                        
                         audio.currentTime = item.time; 
-                        if (audio.paused) {
-                            playAudio();
-                        }
+                        if (audio.paused) playAudio();
                         updateLyricsScroll(item.time, true);
                     }
                 });
-                
                 lyricsWrapper.appendChild(div);
             });
             lyricsWrapper.scrollTop = 0;
@@ -633,54 +651,34 @@
             lyricsWrapper.innerHTML = `<div class="lyric-line" style="opacity: 0.6; padding-top: ${offset};">${msg}</div>`;
         }
 
-        // 新增：监听歌词区域滚动事件（判断用户是否在用鼠标滚轮或触屏滑动）
         lyricsWrapper.addEventListener('scroll', () => {
-            // 如果这个滚动不是由我们系统的自动居中 scrollTo 触发的
-            if (!isUserScrolling) {
-                // 开启拦截状态，阻止自动随音乐进度而滚动
-                isUserScrolling = true;
-            }
-
-            // 只要用户还在持续滚动，就不断重置并延迟 2000 毫秒 (2秒) 的防抖定时器
+            if (!isUserScrolling) isUserScrolling = true;
             if (userScrollTimeout) clearTimeout(userScrollTimeout);
             userScrollTimeout = setTimeout(() => {
-                isUserScrolling = false; // 2秒没有发生新的滚动事件，释放拦截状态
-                // 释放后，立刻同步刷新并平滑滚动回当前播放的时间进度行
-                if (!isNaN(audio.duration)) {
-                    updateLyricsScroll(audio.currentTime, true);
-                }
+                isUserScrolling = false; 
+                if (!isNaN(audio.duration)) updateLyricsScroll(audio.currentTime, true);
             }, 2000);
         });
 
-        // 修改：增加 forceScroll 参数，用于跳过用户滚动拦截
         function updateLyricsScroll(currentTime, forceScroll = false) {
             if (parsedLyrics.length === 0) return;
-            
             let activeIndex = -1;
             for (let i = 0; i < parsedLyrics.length; i++) {
-                if (currentTime >= parsedLyrics[i].time) {
-                    activeIndex = i;
-                } else {
-                    break;
-                }
+                if (currentTime >= parsedLyrics[i].time) activeIndex = i;
+                else break;
             }
             
             if (activeIndex !== -1) {
                 const allLines = lyricsWrapper.querySelectorAll('.lyric-line');
-                
                 const activeLine = document.getElementById(`lrc-${activeIndex}`);
                 if (activeLine) {
-                    // 1. 任何情况下都要保持实时高亮当前播放的歌词行颜色外观
                     allLines.forEach(line => line.classList.remove('active'));
                     activeLine.classList.add('active');
                     
-                    // 2. 判定滚动追踪逻辑：当且仅当 [用户没有手动滑动歌词] 或者 [接收到强制回正指令 forceScroll] 时才执行容器位移
                     if (!isUserScrolling || forceScroll) {
                         const containerHeight = lyricsWrapper.clientHeight;
                         const lineOffsetTop = activeLine.offsetTop;
                         const lineHeight = activeLine.clientHeight;
-                        
-                        // 临时将 isUserScrolling 置为 true，防止系统的 scrollTo 位移行为被上方的 scroll 监听误当成用户在划动
                         const prevScrollState = isUserScrolling;
                         isUserScrolling = true;
 
@@ -688,27 +686,62 @@
                             top: lineOffsetTop - (containerHeight / 2) + (lineHeight / 2),
                             behavior: 'smooth'
                         });
-
-                        // 动画开始后短暂延迟，放开保护，恢复原有的滚动拦截监测状态
-                        setTimeout(() => {
-                            isUserScrolling = prevScrollState;
-                        }, 50);
+                        setTimeout(() => { isUserScrolling = prevScrollState; }, 50);
                     }
                 }
             }
         }
 
+        // 爆改：增加音频无缝平滑淡入机制
         function playAudio() { 
+            clearInterval(fadeInterval);
+            if (window.AudioContext || window.webkitAudioContext) { initVisualizer(); }
+            
+            audio.volume = 0; // 从零渐增
             audio.play().then(() => {
                 if ('mediaSession' in navigator) { navigator.mediaSession.playbackState = "playing"; }
-            }).catch(() => { pauseAudio(); }); 
-            playBtn.innerText = '暂停'; disc.style.animationPlayState = 'running'; tonearm.classList.add('playing'); 
+                
+                fadeInterval = setInterval(() => {
+                    if (audio.volume < 0.9) audio.volume += 0.1;
+                    else { audio.volume = 1; clearInterval(fadeInterval); }
+                }, 30);
+
+                // 看板娘交互：反馈当前播放的歌名
+                showBubbleWithTimer(`♪ 正在播放《${songTitle.innerText}》，要用心听哦~`);
+            }).catch(() => { pauseAudio(true); }); 
+
+            playBtn.innerText = '暂停'; 
+            disc.style.animationPlayState = 'running'; 
+            tonearm.classList.add('playing'); 
         }
         
-        function pauseAudio() { 
-            audio.pause(); 
-            if ('mediaSession' in navigator) { navigator.mediaSession.playbackState = "paused"; }
-            playBtn.innerText = '播放'; disc.style.animationPlayState = 'paused'; tonearm.classList.remove('playing'); 
+        // 爆改：增加音频无缝平滑淡出机制
+        function pauseAudio(immediate = false) { 
+            clearInterval(fadeInterval);
+            if (immediate) {
+                audio.pause();
+                audio.volume = 1;
+                if ('mediaSession' in navigator) { navigator.mediaSession.playbackState = "paused"; }
+                playBtn.innerText = '播放'; disc.style.animationPlayState = 'paused'; tonearm.classList.remove('playing');
+                return;
+            }
+
+            // 平滑淡出再暂停
+            fadeInterval = setInterval(() => {
+                if (audio.volume > 0.1) audio.volume -= 0.1;
+                else {
+                    audio.volume = 0;
+                    clearInterval(fadeInterval);
+                    audio.pause();
+                    audio.volume = 1; // 暂停后还原基准音量值
+                    if ('mediaSession' in navigator) { navigator.mediaSession.playbackState = "paused"; }
+                }
+            }, 30);
+
+            playBtn.innerText = '播放'; 
+            disc.style.animationPlayState = 'paused'; 
+            tonearm.classList.remove('playing'); 
+            showBubbleWithTimer("休息一下吧，真昼会一直在这里陪着你。");
         }
 
         playBtn.addEventListener('click', () => { if (audio.paused) { playAudio(); } else { pauseAudio(); } });
@@ -717,7 +750,8 @@
         function handlePrevSong() {
             const activeList = getActiveList(); if (activeList.length === 0) return;
             let idx = currentIndex;
-            if (playMode === 'random') { idx = Math.floor(Math.random() * activeList.length); } else { idx = currentIndex - 1; if (idx < 0) idx = activeList.length - 1; }
+            if (playMode === 'random') { idx = Math.floor(Math.random() * activeList.length); } 
+            else { idx = currentIndex - 1; if (idx < 0) idx = activeList.length - 1; }
             loadSong(idx, true); 
         }
 
@@ -725,7 +759,10 @@
             const activeList = getActiveList(); if (activeList.length === 0) return;
             if (isAutoEnd && playMode === 'single') { audio.currentTime = 0; playAudio(); return; }
             let idx = currentIndex;
-            if (playMode === 'random') { idx = Math.floor(Math.random() * activeList.length); if (activeList.length > 1 && idx === currentIndex) { idx = (idx + 1) % activeList.length; } } else { idx = currentIndex + 1; if (idx >= activeList.length) idx = 0; }
+            if (playMode === 'random') { 
+                idx = Math.floor(Math.random() * activeList.length); 
+                if (activeList.length > 1 && idx === currentIndex) { idx = (idx + 1) % activeList.length; } 
+            } else { idx = currentIndex + 1; if (idx >= activeList.length) idx = 0; }
             loadSong(idx, true);
         }
 
@@ -733,13 +770,22 @@
         audio.addEventListener('ended', () => { handleNextSong(true); });
 
         modeBtn.addEventListener('click', () => {
-            if (playMode === 'loop') { playMode = 'random'; modeBtn.innerText = '🔀'; modeBtn.title = '随机播放'; showBubbleWithTimer("しいなまひる提示：已切换到随机播放模式。"); } 
-            else if (playMode === 'random') { playMode = 'single'; modeBtn.innerText = '🔂'; modeBtn.title = '单曲循环'; showBubbleWithTimer("しいなまひる提示：要一直重复听这首歌吗？"); } 
-            else { playMode = 'loop'; modeBtn.innerText = '🔁'; modeBtn.title = '列表循环'; showBubbleWithTimer("しいなまひる提示：已切换到列表循环模式。"); }
+            if (playMode === 'loop') { playMode = 'random'; modeBtn.innerText = '🔀'; modeBtn.title = '随机播放'; showBubbleWithTimer("已切换到随机播放模式。"); } 
+            else if (playMode === 'random') { playMode = 'single'; modeBtn.innerText = '🔂'; modeBtn.title = '单曲循环'; showBubbleWithTimer("要一直重复听这首歌吗？"); } 
+            else { playMode = 'loop'; modeBtn.innerText = '🔁'; modeBtn.title = '列表循环'; showBubbleWithTimer("已切换到列表循环模式。"); }
+        });
+
+        // 新增：倍速调节按钮核心控制事件逻辑
+        speedBtn.addEventListener('click', () => {
+            currentSpeedIndex = (currentSpeedIndex + 1) % speedList.length;
+            const targetSpeed = speedList[currentSpeedIndex];
+            audio.playbackRate = targetSpeed;
+            speedBtn.innerText = targetSpeed + "X";
+            showBubbleWithTimer(`真昼提示：当前播放速度已调整为 ${targetSpeed} 倍速。`);
         });
 
         currentDlBtn.addEventListener('click', () => {
-            if (!currentPlayingInfo.url) { showBubbleWithTimer("しいなまひる:本地导入的歌曲不能再次下载哦~"); return; }
+            if (!currentPlayingInfo.url) { showBubbleWithTimer("本地导入的歌曲不能再次下载哦~"); return; }
             handleAudioDownload(currentPlayingInfo);
         });
 
@@ -754,7 +800,7 @@
             if (!isNaN(audio.duration)) { 
                 progressBar.style.width = `${(audio.currentTime / audio.duration) * 100}%`; 
                 currentTimeUI.innerText = formatTime(audio.currentTime); 
-                updateLyricsScroll(audio.currentTime, false); // 正常播放更新时不强制回正
+                updateLyricsScroll(audio.currentTime, false); 
             } 
         });
         
@@ -765,21 +811,18 @@
         function showBubbleWithTimer(text) { if (bubbleTimer) clearTimeout(bubbleTimer); bubble.innerText = text; bubble.style.opacity = '1'; bubbleTimer = setTimeout(() => { bubble.style.opacity = '0'; }, 5000); }
         mahiruSkin.addEventListener('click', () => { const q = ["别突然戳我呀...", "听音乐的时候要保持好心情哦。", "这首歌，我也很喜欢呢。", getTimeGreeting()]; showBubbleWithTimer(q[Math.floor(Math.random() * q.length)]); });
 
-        /* ================= 新增：异步读取剪贴板一键粘贴核心逻辑 ================= */
         wyyPasteBtn.addEventListener('click', async () => {
             try {
                 if (!navigator.clipboard || !navigator.clipboard.readText) {
-                    showBubbleWithTimer("しいなまひる: 当前浏览器不支持或者拒绝了剪贴板读取请求。");
+                    showBubbleWithTimer("当前浏览器不支持或者拒绝了剪贴板读取请求。");
                     return;
                 }
                 const text = await navigator.clipboard.readText();
                 const trimmed = text.trim();
-                
                 if (!trimmed) {
-                    showBubbleWithTimer("しいなまひる: 剪贴板里空空如也，什么也没有找到呢。");
+                    showBubbleWithTimer("剪贴板里空空如也，什么也没有找到呢。");
                     return;
                 }
-                
                 const match = trimmed.match(/id=(\d+)/);
                 if (match && match[1]) {
                     wyyIdInput.value = match[1];
@@ -789,18 +832,18 @@
                     showBubbleWithTimer("❀ 成功粘贴了歌曲 ID ❀");
                 } else {
                     wyyIdInput.value = trimmed;
-                    showBubbleWithTimer("しいなまひる: 已为您粘贴，但看起来不符合纯数字规范呢。");
+                    showBubbleWithTimer("已为您粘贴，但看起来不符合纯数字规范呢。");
                 }
             } catch (err) {
-                showBubbleWithTimer("しいなまひる: 复制失败了，可能需要您在手机上手动授权剪贴板读取。");
+                showBubbleWithTimer("复制失败了，可能需要您在手机上手动授权剪贴板读取。");
                 console.error(err);
             }
         });
 
         wyyDlBtn.addEventListener('click', async () => {
             const songId = wyyIdInput.value.trim();
-            if (!songId || !/^\d+$/.test(songId)) { showBubbleWithTimer("しいなまひる:请输入纯数字的歌曲 ID 呢。"); return; }
-            showBubbleWithTimer("しいなまひる:正在为您向云端请求解析，请稍候...");
+            if (!songId || !/^\d+$/.test(songId)) { showBubbleWithTimer("请输入纯数字的歌曲 ID 呢。"); return; }
+            showBubbleWithTimer("正在为您向云端请求解析，请稍候...");
             wyyDlBtn.innerText = "解析中..."; wyyDlBtn.disabled = true;
             try {
                 const response = await fetch(`${VERCEL_URL}/api/parse`, {
@@ -811,30 +854,24 @@
                 if (!response.ok) throw new Error("接口返回异常");
                 const data = await response.json();
                 if (data.success) {
-                    showBubbleWithTimer(`❀ しいなまひる:成功解析！正在为您播放《${data.songName}》❀`);
+                    showBubbleWithTimer(`❀ 成功解析！正在为您播放《${data.songName}》❀`);
                     audio.src = data.audioUrl;
                     songTitle.innerText = data.songName;
                     songArtist.innerText = data.artistName || "网易云在线点播";
-                    
                     currentPlayingInfo = { name: data.songName, url: data.audioUrl, id: songId };
 
                     playAudio();
-                    
-                    if (data.lyric) {
-                        parseLyricText(data.lyric);
-                    } else {
-                        fetchLyrics(songId);
-                    }
+                    if (data.lyric) parseLyricText(data.lyric);
+                    else fetchLyrics(songId);
                     wyyIdInput.value = '';
-                } else { showBubbleWithTimer("しいなまひる:点播失败：" + data.msg); }
+                } else { showBubbleWithTimer("点播失败：" + data.msg); }
             } catch (err) { 
                 fetchLyrics(songId);
-                showBubbleWithTimer("しいなまひる:无法连接到云端 service，请确认 Vercel 后端部署状态？"); 
+                showBubbleWithTimer("无法连接到云端 service，请确认 Vercel 后端部署状态？"); 
             } 
             finally { wyyDlBtn.innerText = "直接播放"; wyyDlBtn.disabled = false; }
         });
 
-        /* ================= 音频下载分流控制 ================= */
         async function handleAudioDownload(songItem) {
             if (!songItem || !songItem.url) return;
             const fileName = songItem.name + ".mp3";
@@ -854,18 +891,14 @@
                             types: [{ description: '音频文件', accept: { 'audio/mpeg': ['.mp3'], 'audio/ogg': ['.ogg'], 'audio/wav': ['.wav'], 'audio/flac': ['.flac'] } }]
                         });
                         showBubbleWithTimer("正在向所选路径写入数据文件，请勿关闭网页...");
-                        
                         const response = await fetch(songItem.url);
                         const blob = await response.blob();
                         const writable = await handle.createWritable();
                         await writable.write(blob);
                         await writable.close();
-                        
                         showBubbleWithTimer("❀ 歌曲已成功写入指定位置！");
                     } catch (err) {
-                        if (err.name !== 'AbortError') { 
-                            triggerStreamDownload(songItem.url, fileName); 
-                        }
+                        if (err.name !== 'AbortError') triggerStreamDownload(songItem.url, fileName); 
                     }
                 } else {
                     triggerStreamDownload(songItem.url, fileName);
@@ -897,7 +930,6 @@
                 });
         }
 
-        /* ================= Media Session 后台/锁屏联动 ================= */
         function updateMediaSession() {
             if ('mediaSession' in navigator) {
                 navigator.mediaSession.metadata = new MediaMetadata({
@@ -915,9 +947,7 @@
 
         window.addEventListener('DOMContentLoaded', () => {
             initOnlinePlaylist();
-            setTimeout(() => {
-                showBubbleWithTimer(getTimeGreeting());
-            }, 1000);
+            setTimeout(() => { showBubbleWithTimer(getTimeGreeting()); }, 1000);
         });
     </script>
 </body>
